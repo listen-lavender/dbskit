@@ -39,7 +39,7 @@ class DBHandler(object):
 
     def update(self, tpl, data=None, method='SINGLE'):
         tpl = DBHandler.wrap(tpl)
-        return self._conn[self.db][tpl['collection']].update(data['cond'], self.check(tpl['tips'], data['data']))
+        return self._conn[self.db][tpl['collection']].update(data['cond'], self.check(tpl['tips'], data['data']), upsert=True)
 
     def delete(self, tpl, data=None, method='SINGLE'):
         tpl = DBHandler.wrap(tpl)

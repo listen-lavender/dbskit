@@ -263,9 +263,10 @@ class Model(dict):
                     cls._insertdatas.append(one)
                 if forcexe:
                     try:
-                        dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
-                        dbpc.handler.commit()
-                        cls._insertdatas = []
+                        if cls._insertdatas:
+                            dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
+                            dbpc.handler.commit()
+                            cls._insertdatas = []
                     except:
                         t, v, b = sys.exc_info()
                         err_messages = traceback.format_exception(t, v, b)

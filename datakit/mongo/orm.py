@@ -59,7 +59,7 @@ class StrField(Field):
         if not 'default' in attributes:
             attributes['default'] = ''
         if not 'ddl' in attributes:
-            attributes['ddl'] = 'str'
+            attributes['ddl'] = 'basestring'
         super(StrField, self).__init__(**attributes)
 
 class IntField(Field):
@@ -102,6 +102,24 @@ class VersionField(Field):
 
     def __init__(self, name=None):
         super(VersionField, self).__init__(name=name, default=0, ddl='bigint')
+
+class ListField(Field):
+
+    def __init__(self, **attributes):
+        if not 'default' in attributes:
+            attributes['default'] = []
+        if not 'ddl' in attributes:
+            attributes['ddl'] = 'list'
+        super(ListField, self).__init__(**attributes)
+
+class DictField(Field):
+
+    def __init__(self, **attributes):
+        if not 'default' in attributes:
+            attributes['default'] = {}
+        if not 'ddl' in attributes:
+            attributes['ddl'] = 'dict'
+        super(DictField, self).__init__(**attributes)
 
 _triggers = frozenset(['pre_insert', 'pre_update', 'pre_delete'])
 
@@ -203,35 +221,43 @@ class Model(dict):
     def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE, lastid=None):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
-        if method == 'SINGLE':
-            try:
-                if obj:
-                    dbpc.handler.insert(cls.__table__, obj, method)
-            except:
-                t, v, b = sys.exc_info()
-                err_messages = traceback.format_exception(t, v, b)
-                print(': ', ','.join(err_messages), '\n')
+        if obj is not None and update:
+            updatekeys = {}
+            for k, v in obj.__mappings__.iteritems():
+                if v.unique:
+                    updatekeys[k] = obj[k]
+            dbpc.handler.update(cls.__table__, {'cond':updatekeys, 'data':obj}, method)
         else:
-            with cls.__lock:
-                if obj is not None:
-                    cls._insertdatas.append(obj)
-                if forcexe:
-                    try:
-                        dbpc.handler.insert(cls.__table__, cls._insertdatas, method)
-                        cls._insertdatas = []
-                    except:
-                        t, v, b = sys.exc_info()
-                        err_messages = traceback.format_exception(t, v, b)
-                        print(': ', ','.join(err_messages), '\n')
-                else:
-                    if sys.getsizeof(cls._insertdatas) > maxsize:
+            if method == 'SINGLE':
+                try:
+                    if obj:
+                        dbpc.handler.insert(cls.__table__, obj, method)
+                except:
+                    t, v, b = sys.exc_info()
+                    err_messages = traceback.format_exception(t, v, b)
+                    print(': ', ','.join(err_messages), '\n')
+            else:
+                with cls.__lock:
+                    if obj is not None:
+                        cls._insertdatas.append(obj)
+                    if forcexe:
                         try:
-                            dbpc.handler.insert(cls.__table__, cls._insertdatas, method)
-                            cls._insertdatas = []
+                            if cls._insertdatas:
+                                dbpc.handler.insert(cls.__table__, cls._insertdatas, method)
+                                cls._insertdatas = []
                         except:
                             t, v, b = sys.exc_info()
                             err_messages = traceback.format_exception(t, v, b)
                             print(': ', ','.join(err_messages), '\n')
+                    else:
+                        if sys.getsizeof(cls._insertdatas) > maxsize:
+                            try:
+                                dbpc.handler.insert(cls.__table__, cls._insertdatas, method)
+                                cls._insertdatas = []
+                            except:
+                                t, v, b = sys.exc_info()
+                                err_messages = traceback.format_exception(t, v, b)
+                                print(': ', ','.join(err_messages), '\n')
 
     @classmethod
     def delete(cls, **kwargs):
