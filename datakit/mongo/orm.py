@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-import time, logging, threading, sys, traceback
+import time, datetime, logging, threading, sys, traceback
 from suit import dbpc
 MAXSIZE = 20
 class Field(object):
@@ -226,6 +226,9 @@ class Model(dict):
             for k, v in obj.__mappings__.iteritems():
                 if v.unique:
                     updatekeys[k] = obj[k]
+            r = dbpc.handler.queryOne(cls.__table__, updatekeys)
+            if r:
+                obj['updatable'] = r['updatable']
             dbpc.handler.update(cls.__table__, {'cond':updatekeys, 'data':obj}, method)
         else:
             if method == 'SINGLE':

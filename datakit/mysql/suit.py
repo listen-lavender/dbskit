@@ -206,13 +206,18 @@ class DBPoolCollector(object):
         :return:
         """
         # print "start...", self._current.markname, self._current.connect
-        self._collection[self._current.markname].release(self._current.connect)
-        del self._current.handler, self._current.connect
+        if hasattr(self._current, 'connect') and self._current.connect is not None:
+            self._collection[self._current.markname].release(self._current.connect)
+            del self._current.handler, self._current.connect
         # print "end..."
 
     @property
     def handler(self):
-        return weakref.proxy(self._current.handler)
+        if hasattr(self._current, 'handler') and self._current.handler is not None:
+            return weakref.proxy(self._current.handler)
+        else:
+            return None
+            
 
     # @staticmethod
     # def instance():
@@ -235,7 +240,8 @@ def withMysql(markname, resutype='TUPLE', autocommit=False):
         def wrapper(*args, **kwargs):
             if not dbpc._collection.has_key(markname):
                 raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection")
-            dbpc.connect(markname, resutype=resutype, autocommit=autocommit)
+            if dbpc.handler is None:
+                dbpc.connect(markname, resutype=resutype, autocommit=autocommit)
             try:
                 res = fun(*args, **kwargs)
             except:
@@ -323,7 +329,3 @@ if __name__ == "__main__":
     a.join()
     b.join()
     c.join()
-
-
-
-
