@@ -22,35 +22,44 @@ class DBHandler(object):
     def check(self, tips, data):
     	return self._check(tips, data)
 
-    def queryAll(self, tpl, data=None):
-        tpl = DBHandler.wrap(tpl)
-        return self._conn[self.db][tpl['collection']].find(self.check(tpl['tips'], data))
+    def queryAll(self, spec, db=None, collection=None):
+        db = db or self.db
+        return self.query(spec, db=db, collection=collection, qt='all')
 
-    def queryOne(self, tpl, data=None):
-        tpl = DBHandler.wrap(tpl)
-        return self._conn[self.db][tpl['collection']].find_one(self.check(tpl['tips'], data))
+    def queryOne(self, spec, db=None, collection=None):
+        db = db or self.db
+        return self.query(spec, db=db, collection=collection, qt='one')
 
-    def query(self, tpl, data=None, qt='all'):
-        tpl = DBHandler.wrap(tpl)
+    def query(self, spec, db=None, collection=None, qt='all'):
+        db = db or self.db
         if qt.lower() == 'one':
-            return self._conn[self.db][tpl['collection']].find_one(self.check(tpl['tips'], data))
+            return self._conn[db][collection].find_one(spec)
         else:
-            return self._conn[self.db][tpl['collection']].find(self.check(tpl['tips'], data))
+            return self._conn[db][collection].find(spec)
 
-    def update(self, tpl, data=None, method='SINGLE'):
-        tpl = DBHandler.wrap(tpl)
-        return self._conn[self.db][tpl['collection']].update(data['cond'], self.check(tpl['tips'], data['data']), upsert=True)
+    def update(self, spec, doc, db=None, collection=None, upsert=False, method='SINGLE'):
+        db = db or self.db
+        for key in doc:
+            if not '$' in key:
+                raise " Update document must be start with $. "
+        multi = not method.upper() == 'SINGLE'
+        return self._conn[db][collection].update(spec, doc, upsert=upsert, multi=multi)
 
-    def delete(self, tpl, data=None, method='SINGLE'):
-        tpl = DBHandler.wrap(tpl)
-        return self._conn[self.db][tpl['collection']].remove(self.check(tpl['tips'], data))
+    def delete(self, spec, db=None, collection=None, method='SINGLE'):
+        db = db or self.db
+        multi = not method.upper() == 'SINGLE'
+        return self._conn[db][collection].remove(spec, multi=multi)
 
-    def insert(self, tpl, data=None, method='SINGLE', lastid=None):
-        tpl = DBHandler.wrap(tpl)
+    def insert(self, doc, db=None, collection=None, method='SINGLE', lastid=None):
+        db = db or self.db
         if method == 'SINGLE':
-            return self._conn[self.db][tpl['collection']].insert_one(self.check(tpl['tips'], data)).inserted_id
+            if not type(doc) == dict:
+                raise "Single insert document must be dict type."
+            return self._conn[db][collection].insert_one(doc).inserted_id
         else:
-            return self._conn[self.db][tpl['collection']].insert_many(self.check(tpl['tips'], data)).inserted_ids
+            if not type(doc) == list:
+                raise "Bulk insert document must be list type."
+            return self._conn[db][collection].insert_many(doc).inserted_ids
 
     def showColumns(self, table):
         """

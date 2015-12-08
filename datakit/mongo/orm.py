@@ -194,20 +194,20 @@ class Model(dict):
         self[key] = value
 
     @classmethod
-    def queryOne(cls, **kwargs):
+    def queryOne(cls, spec):
         '''
         Find by where clause and return one result. If multiple results found, 
         only the first one returned. If no result found, return None.
         '''
-        d = dbpc.handler.queryOne(cls.__table__, **kwargs)
+        d = dbpc.handler.queryOne(spec, collection=cls.__table__)
         return cls(**d) if d else None
 
     @classmethod
-    def queryAll(cls, **kwargs):
+    def queryAll(cls, spec):
         '''
         Find all and return list.
         '''
-        L = dbpc.handler.queryAll(cls.__table__, **kwargs)
+        L = dbpc.handler.queryAll(spec, collection=cls.__table__)
         return [cls(**d) for d in L]
 
     @classmethod
@@ -215,7 +215,7 @@ class Model(dict):
         '''
         Find by 'select count(pk) from table where ... ' and return int.
         '''
-        return len(dbpc.handler.queryAll(cls.__table__, **kwargs))
+        return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
     def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE, lastid=None):
@@ -226,15 +226,15 @@ class Model(dict):
             for k, v in obj.__mappings__.iteritems():
                 if v.unique:
                     updatekeys[k] = obj[k]
-            r = dbpc.handler.queryOne(cls.__table__, updatekeys)
+            r = dbpc.handler.queryOne(updatekeys, collection=cls.__table__)
             if r:
                 obj['updatable'] = r['updatable']
-            dbpc.handler.update(cls.__table__, {'cond':updatekeys, 'data':obj}, method)
+            dbpc.handler.update(updatekeys, {"$set":obj}, collection=cls.__table__, upsert=True)
         else:
             if method == 'SINGLE':
                 try:
                     if obj:
-                        dbpc.handler.insert(cls.__table__, obj, method)
+                        dbpc.handler.insert(obj, collection=cls.__table__, method=method)
                 except:
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
@@ -246,7 +246,7 @@ class Model(dict):
                     if forcexe:
                         try:
                             if cls._insertdatas:
-                                dbpc.handler.insert(cls.__table__, cls._insertdatas, method)
+                                dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method)
                                 cls._insertdatas = []
                         except:
                             t, v, b = sys.exc_info()
@@ -255,7 +255,7 @@ class Model(dict):
                     else:
                         if sys.getsizeof(cls._insertdatas) > maxsize:
                             try:
-                                dbpc.handler.insert(cls.__table__, cls._insertdatas, method)
+                                dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method)
                                 cls._insertdatas = []
                             except:
                                 t, v, b = sys.exc_info()
@@ -263,12 +263,12 @@ class Model(dict):
                                 print(': ', ','.join(err_messages), '\n')
 
     @classmethod
-    def delete(cls, **kwargs):
-        dbpc.handler.delete(cls.__table__, **kwargs)
+    def delete(cls, spec):
+        dbpc.handler.delete(spec, collection=cls.__table__)
 
     @classmethod
-    def update(cls, **kwargs):
-        dbpc.handler.update(cls.__table__, **kwargs)
+    def update(cls, spec, doc):
+        dbpc.handler.update(spec, doc, collection=cls.__table__)
 
 if __name__=='__main__':
     pass

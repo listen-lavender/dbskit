@@ -11,14 +11,9 @@ import traceback
 import sys
 
 import handler
-from error import ConnectionNotInPoolError, \
-                  ConnectionPoolOverLoadError, \
-                  ClassAttrNameConflictError, \
+from error import ClassAttrNameConflictError, \
                   ConnectionNotFoundError, \
                   ConnectionNameConflictError
-
-from threading import currentThread
-from gevent import getcurrent
 
 RDB = 'rdb'
 WDB = 'wdb'
@@ -36,20 +31,16 @@ def singleton(cls):
 
 class DBConnect(handler.DBHandler):
 
-    def __init__(self, settings, autocommit=False, resutype='DICT'):
+    def __init__(self, settings, autocommit=True, resutype='DICT'):
         super(DBConnect, self).__init__('', handler.dblib.connect(**settings), resutype=resutype, autocommit=autocommit)
 
 class DBPool(object):
 
     def __init__(self, markname, minlimit=MINLIMIT, maxlimit=MAXLIMIT, **settings):
         self.markname = markname
-        self.minlimit = minlimit
-        self.maxlimit = maxlimit
         self.settings = settings
-        self.client = handler.dblib.MongoClient(settings['host'], settings['port'], maxPoolSize=50, waitQueueMultiple=10)
-        self._openconnects = []
-        self._liveconnects = 0
-        self._peakconnects = 0
+        # self.client = handler.dblib.MongoClient(settings['host'], settings['port'], minPoolSize=minlimit, maxPoolSize=maxlimit, waitQueueMultiple=10)
+        self.client = handler.dblib.MongoClient(settings['host'], settings['port'], maxPoolSize=maxlimit, waitQueueMultiple=10)
 
     def __repr__(self):
         return "<%s::%s>" % (self.__class__.__name__, self.markname)
@@ -72,22 +63,9 @@ class DBPool(object):
 class DBPoolCollector(object):
 
     def __init__(self, handler=None, delegate=False):
-        """
-        Global DBPoolCollector with specific connection handler,
-        call DBPoolCollector.connect to passing the mysql connection to this handler
-        and use DBPoolCollector.db access
-        current database connection wrapper class.
-        :param handler:
-        :return:
-        """
         self._handler = handler
         self._collection = {}
-        # self._instance_lock = threading.Lock()
         self._current = threading.local()
-        # self._lock = threading.Lock()
-        # the queue stores available handler instance
-        # with self._instance_lock:
-        #     self._instance = self
         self._current.connect = None
         self._current.markname = None
         self._current.handler = None
@@ -130,7 +108,7 @@ class DBPoolCollector(object):
         if hasattr(self._collection, markname):
             del self._collection[markname]
 
-    def connect(self, markname, resutype='DICT', autocommit=False):
+    def connect(self, markname, resutype='DICT', autocommit=True):
         """
         Mapping current connection handler's method to DBPoolCollector
         :return:
@@ -164,7 +142,7 @@ class DBPoolCollector(object):
 
 dbpc = DBPoolCollector(handler.DBHandler, delegate=True)
 
-def withMongo(markname, resutype='DICT', autocommit=False):
+def withMongo(markname, resutype='DICT', autocommit=True):
     """
     :param markname:
     :return:the decorator with specific db connection
@@ -189,36 +167,36 @@ def withMongo(markname, resutype='DICT', autocommit=False):
     return wrapped
 
 @withMongo(RDB, resutype='DICT')
-def withMongoQuery(sql, data=None, qt='all'):
+def withMongoQuery(doc, data=None, qt='all'):
     """
     :param markname:
     :return:the decorator with specific db connection
     """
-    return dbpc.handler.query(sql, data, qt)
+    return dbpc.handler.query(doc, data, qt)
 
 @withMongo(WDB, autocommit=True)
-def withMongoInsert(sql, data=None, method='SINGLE'):
+def withMongoInsert(doc, data=None, method='SINGLE'):
     """
     :param markname:
     :return:the decorator with specific db connection
     """
-    return dbpc.handler.insert(sql, data, method)
+    return dbpc.handler.insert(doc, data, method)
 
 @withMongo(WDB, autocommit=True)
-def withMongoDelete(sql, data=None, method='SINGLE'):
+def withMongoDelete(doc, data=None, method='SINGLE'):
     """
     :param markname:
     :return:the decorator with specific db connection
     """
-    return dbpc.handler.delete(sql, data, method)
+    return dbpc.handler.delete(doc, data, method)
 
 @withMongo(WDB, autocommit=True)
-def withMongoUpdate(sql, data=None, method='SINGLE'):
+def withMongoUpdate(doc, data=None, method='SINGLE'):
     """
     :param markname:
     :return:the decorator with specific db connection
     """
-    return dbpc.handler.update(sql, data, method)
+    return dbpc.handler.update(doc, data, method)
 
 if __name__ == "__main__":
 
