@@ -13,9 +13,9 @@ README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 requires = [
-    'gitpython', # 0.3.2.RC1
-    'gitdb', # 0.5.4
-    # 'mysql-connector-python',
+    'mysql-connector-python==1.2.3',
+    'MySQL-python==1.2.5',
+    'pymongo>=3.0.3',
     ]
 
 datakit = __import__('datakit')
