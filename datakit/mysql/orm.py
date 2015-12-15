@@ -293,5 +293,11 @@ class Model(dict):
         items = kwargs.items()
         dbpc.handler.update('update `%s` set %s %s' % (cls.__table__, ','.join('`'+one[0]+'`=%s' for one in items), where), tuple(list(*args)+[one[1] for one in items]))
 
+class MarkModel(Model):
+    
+    create_time = DatetimeField(ddl='datetime')
+    update_time = DatetimeField(ddl='datetime')
+    tid = IntField(ddl='int')
+
 if __name__=='__main__':
     pass

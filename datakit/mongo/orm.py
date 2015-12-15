@@ -284,5 +284,11 @@ class Model(dict):
     def update(cls, spec, doc):
         dbpc.handler.update(spec, doc, collection=cls.__table__)
 
+class MarkModel(Model):
+
+    create_time = DatetimeField(ddl='datetime')
+    update_time = DatetimeField(ddl='datetime')
+    tid = IdField(ddl='objectid')
+
 if __name__=='__main__':
     pass
