@@ -108,15 +108,20 @@ class DBPoolCollector(object):
         if hasattr(self._collection, markname):
             del self._collection[markname]
 
-    def connect(self, markname, resutype='DICT', autocommit=True):
+    def connect(self, markname, connect=None, resutype='DICT', autocommit=False):
         """
         Mapping current connection handler's method to DBPoolCollector
         :return:
         """
         if not hasattr(self._current, "connect") or self._current.connect is None:
-            self._current.connect = self._collection[markname].connect()
-            self._current.markname = markname
-            self._current.handler = handler.DBHandler(markname, self._current.connect, resutype=resutype, autocommit=autocommit, db=self._collection[markname].settings['db'])
+            if connect is not None:
+                self._current.connect = connect
+                self._current.markname = markname
+                self._current.handler = handler.DBHandler(markname, self._current.connect, resutype=resutype, autocommit=autocommit, db=self._collection[markname].settings['db'])
+            else:
+                self._current.connect = self._collection[markname].connect()
+                self._current.markname = markname
+                self._current.handler = handler.DBHandler(markname, self._current.connect, resutype=resutype, autocommit=autocommit, db=self._collection[markname].settings['db'])
 
     def release(self):
         """
@@ -142,7 +147,7 @@ class DBPoolCollector(object):
 
 dbpc = DBPoolCollector(handler.DBHandler, delegate=True)
 
-def withMongo(markname, resutype='DICT', autocommit=True):
+def withMongo(markname, connect=None, resutype='DICT', autocommit=False):
     """
     :param markname:
     :return:the decorator with specific db connection
@@ -152,7 +157,7 @@ def withMongo(markname, resutype='DICT', autocommit=True):
         def wrapper(*args, **kwargs):
             if not dbpc._collection.has_key(markname):
                 raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection")
-            dbpc.connect(markname, resutype=resutype, autocommit=autocommit)
+            dbpc.connect(markname, connect=connect, resutype=resutype, autocommit=autocommit)
             try:
                 res = fun(*args, **kwargs)
             except:
@@ -202,7 +207,7 @@ if __name__ == "__main__":
 
     dbpc.addDB("local", 1, host="127.0.0.1",
                     port=27017,
-                    db="kuaijie")
+                    db="dandan-jiang")
 
     @withMongo('local')
     def test():

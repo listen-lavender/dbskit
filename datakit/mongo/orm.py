@@ -2,6 +2,7 @@
 # coding=utf-8
 import time, datetime, logging, threading, sys, traceback
 from suit import dbpc
+from bson.objectid import ObjectId
 MAXSIZE = 20
 class Field(object):
     _count = 0
@@ -53,13 +54,22 @@ class Field(object):
         self.comment and s.append(self.comment or '')
         return ''.join(s)
 
+class IdField(Field):
+
+    def __init__(self, **attributes):
+        if not 'default' in attributes:
+            attributes['default'] = ObjectId()
+        if not 'ddl' in attributes:
+            attributes['ddl'] = 'ObjectId'
+        super(IdField, self).__init__(**attributes)
+
 class StrField(Field):
 
     def __init__(self, **attributes):
         if not 'default' in attributes:
             attributes['default'] = ''
         if not 'ddl' in attributes:
-            attributes['ddl'] = 'basestring'
+            attributes['ddl'] = 'str'
         super(StrField, self).__init__(**attributes)
 
 class IntField(Field):
@@ -221,15 +231,19 @@ class Model(dict):
     def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE, lastid=None):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
+        # dbpc.handler.insert(obj, collection=cls.__table__, method='SINGLE')
+        record = None
         if obj is not None and update:
             updatekeys = {}
             for k, v in obj.__mappings__.iteritems():
                 if v.unique:
                     updatekeys[k] = obj[k]
-            r = dbpc.handler.queryOne(updatekeys, collection=cls.__table__)
-            if r:
-                obj['updatable'] = r['updatable']
-            dbpc.handler.update(updatekeys, {"$set":obj}, collection=cls.__table__, upsert=True)
+            if updatekeys:
+                record = dbpc.handler.queryOne(updatekeys, collection=cls.__table__)
+            if record and 'create_time' in record:
+                obj['create_time'] = record['create_time']
+        if record:
+            dbpc.handler.update(updatekeys, {"$set":obj}, collection=cls.__table__)
         else:
             if method == 'SINGLE':
                 try:

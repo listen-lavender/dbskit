@@ -241,7 +241,7 @@ class Model(dict):
             items.sort(lambda x,y:cmp(x[0], y[0]))
             if cls._insertsql is None or method == 'SINGLE':
                 if update:
-                    cls._insertsql = 'insert into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in updatekeys)
+                    cls._insertsql = 'insert into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in updatekeys if not one == 'create_time')
                 else:
                     cls._insertsql = 'insert ignore into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items)
             one = tuple([i[1] for i in items])

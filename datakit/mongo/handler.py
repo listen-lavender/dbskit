@@ -13,7 +13,7 @@ class DBHandler(object):
 
     @classmethod
     def wrap(cls, tpl):
-        if type(tpl) == dict:
+        if isinstance(doc, dict):
             tpl['tips'] = tpl.get('tips')
         else:
             tpl = {'collection':tpl, 'tips':None}
@@ -53,7 +53,7 @@ class DBHandler(object):
     def insert(self, doc, db=None, collection=None, method='SINGLE', lastid=None):
         db = db or self.db
         if method == 'SINGLE':
-            if not type(doc) == dict:
+            if not isinstance(doc, dict):
                 raise "Single insert document must be dict type."
             return self._conn[db][collection].insert_one(doc).inserted_id
         else:
