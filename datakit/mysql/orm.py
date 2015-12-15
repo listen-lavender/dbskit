@@ -2,7 +2,9 @@
 # coding=utf-8
 import time, logging, threading, sys, traceback
 from suit import dbpc
+
 MAXSIZE = 20
+
 class Field(object):
     _count = 0
     def __init__(self, **attributes):
@@ -53,6 +55,7 @@ class Field(object):
         self.comment and s.append(self.comment or '')
         return ''.join(s)
 
+
 class StrField(Field):
 
     def __init__(self, **attributes):
@@ -61,6 +64,7 @@ class StrField(Field):
         if not 'ddl' in attributes:
             attributes['ddl'] = 'varchar(255)'
         super(StrField, self).__init__(**attributes)
+
 
 class IntField(Field):
 
@@ -71,6 +75,7 @@ class IntField(Field):
             attributes['ddl'] = 'bigint'
         super(IntField, self).__init__(**attributes)
 
+
 class FloatField(Field):
 
     def __init__(self, **attributes):
@@ -79,6 +84,7 @@ class FloatField(Field):
         if not 'ddl' in attributes:
             attributes['ddl'] = 'float'
         super(FloatField, self).__init__(**attributes)
+
 
 class BoolField(Field):
 
@@ -89,6 +95,7 @@ class BoolField(Field):
             attributes['ddl'] = 'bool'
         super(BoolField, self).__init__(**attributes)
 
+
 class TextField(Field):
 
     def __init__(self, **attributes):
@@ -97,6 +104,7 @@ class TextField(Field):
         if not 'ddl' in attributes:
             attributes['ddl'] = 'text'
         super(TextField, self).__init__(**attributes)
+
 
 class BlobField(Field):
 
@@ -107,6 +115,7 @@ class BlobField(Field):
             attributes['ddl'] = 'blob'
         super(BlobField, self).__init__(**attributes)
 
+
 class DatetimeField(Field):
 
     def __init__(self, **attributes):
@@ -116,10 +125,12 @@ class DatetimeField(Field):
             attributes['ddl'] = 'datetime'
         super(DatetimeField, self).__init__(**attributes)
 
+
 class VersionField(Field):
 
     def __init__(self, name=None):
         super(VersionField, self).__init__(name=name, default=0, ddl='bigint')
+
 
 _triggers = frozenset(['pre_insert', 'pre_update', 'pre_delete'])
 
@@ -146,6 +157,7 @@ def genDoc(tablename, tablefields):
         doc.append('  primary key (`id`)')
     doc.append(');')
     return '\n'.join(doc)
+
 
 class ModelMetaclass(type):
     '''
@@ -178,6 +190,7 @@ class ModelMetaclass(type):
         cls.genDoc = lambda self: genDoc(attrs['__table__'], mappings)
         return type.__new__(cls, name, bases, attrs)
 
+
 class Model(dict):
     __table__ = None
     __metaclass__ = ModelMetaclass
@@ -186,9 +199,6 @@ class Model(dict):
     __lock = None
 
     def __init__(self, **attributes):
-        if 'id' in attributes:
-            del attributes['id']
-        
         super(Model, self).__init__(**attributes)
 
     def __getattr__(self, key):
@@ -293,11 +303,19 @@ class Model(dict):
         items = kwargs.items()
         dbpc.handler.update('update `%s` set %s %s' % (cls.__table__, ','.join('`'+one[0]+'`=%s' for one in items), where), tuple(list(*args)+[one[1] for one in items]))
 
+
 class MarkModel(Model):
     
     create_time = DatetimeField(ddl='datetime')
     update_time = DatetimeField(ddl='datetime')
     tid = IntField(ddl='int')
+
+    def __init__(self, **attributes):
+        if not 'create_time' in attributes:
+            attributes['create_time'] = datetime.datetime.now()
+        if not 'update_time' in attributes:
+            attributes['update_time'] = datetime.datetime.now()
+        super(Model, self).__init__(**attributes)
 
 if __name__=='__main__':
     pass
