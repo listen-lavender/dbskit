@@ -16,10 +16,3 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         return instances[cls]
     return _singleton
-
-def comment(text):
-    def _wrapped(cls):
-        def _wrap(*args, **kwargs):
-            return cls(*args, **kwargs)
-        return _wrap
-    return _wrapped
