@@ -8,3 +8,18 @@
 __import__('pkg_resources').declare_namespace(__name__)
 __version__ = '0.0.5'
 __author__ = 'hk'
+
+def singleton(cls):
+    instances = {}
+    def _singleton(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+    return _singleton
+
+def comment(text):
+    def _wrapped(cls):
+        def _wrap(*args, **kwargs):
+            return cls(*args, **kwargs)
+        return _wrap
+    return _wrapped

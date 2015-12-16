@@ -11,6 +11,7 @@ import traceback
 import sys
 
 import handler
+from .. import singleton
 from error import ConnectionNotInPoolError, \
                   ConnectionPoolOverLoadError, \
                   ClassAttrNameConflictError, \
@@ -23,13 +24,6 @@ MINLIMIT = 10
 MAXLIMIT = 40
 customattrs = lambda cls:[attr for attr in dir(cls) if not attr.startswith('_')]
 
-def singleton(cls):
-    instances = {}
-    def _singleton(*args, **kwargs):
-        if cls not in instances:
-            instances[cls] = cls(*args, **kwargs)
-        return instances[cls]
-    return _singleton
 
 class DBConnect(handler.DBHandler):
 

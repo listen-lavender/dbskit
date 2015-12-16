@@ -303,11 +303,17 @@ class MarkModel(Model):
     tid = IdField(ddl='objectid')
 
     def __init__(self, **attributes):
+        for key in self.__mappings__:
+            if not key in attributes:
+                raise Exception('Need field %s. ' % key)
+        if not 'tid' in attributes:
+            raise 'No task id.'
         if not 'create_time' in attributes:
             attributes['create_time'] = datetime.datetime.now()
         if not 'update_time' in attributes:
             attributes['update_time'] = datetime.datetime.now()
         super(Model, self).__init__(**attributes)
+
 
 if __name__=='__main__':
     pass
