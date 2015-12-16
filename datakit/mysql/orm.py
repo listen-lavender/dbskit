@@ -305,12 +305,11 @@ class Model(dict):
 
 
 class MarkModel(Model):
-    
-    create_time = DatetimeField(ddl='datetime')
-    update_time = DatetimeField(ddl='datetime')
-    tid = IntField(ddl='int')
 
     def __init__(self, **attributes):
+        self.__mappings__['create_time'] = DatetimeField(ddl='datetime')
+        self.__mappings__['update_time'] = DatetimeField(ddl='datetime')
+        self.__mappings__['tid'] = IntField(ddl='int')
         for key in self.__mappings__:
             if not key in attributes:
                 raise Exception('Need field %s. ' % key)
