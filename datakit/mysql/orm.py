@@ -307,18 +307,14 @@ class Model(dict):
 class MarkModel(Model):
 
     def __init__(self, **attributes):
-        for key in self.__mappings__:
-            if not key in attributes:
-                raise Exception('Need field %s. ' % key)
         self.__mappings__['create_time'] = DatetimeField(ddl='datetime')
         self.__mappings__['update_time'] = DatetimeField(ddl='datetime')
         self.__mappings__['tid'] = IntField(ddl='int')
-        if not 'tid' in attributes:
-            raise 'No task id.'
-        if not 'create_time' in attributes:
-            attributes['create_time'] = datetime.datetime.now()
-        if not 'update_time' in attributes:
-            attributes['update_time'] = datetime.datetime.now()
+        attributes['create_time'] = datetime.datetime.now()
+        attributes['update_time'] = datetime.datetime.now()
+        for key in self.__mappings__:
+            if not key in attributes:
+                raise Exception('Need field %s. ' % key)
         super(Model, self).__init__(**attributes)
 
 if __name__=='__main__':
