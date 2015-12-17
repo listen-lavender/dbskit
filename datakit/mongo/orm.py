@@ -302,8 +302,8 @@ class MarkModel(Model):
         self.__mappings__['create_time'] = DatetimeField(ddl='datetime')
         self.__mappings__['update_time'] = DatetimeField(ddl='datetime')
         self.__mappings__['tid'] = IdField(ddl='objectid')
-        attributes['create_time'] = datetime.datetime.now()
-        attributes['update_time'] = datetime.datetime.now()
+        attributes['create_time'] = attributes.get('create_time', datetime.datetime.now())
+        attributes['update_time'] = attributes.get('update_time', datetime.datetime.now())
         for key in self.__mappings__:
             if not key in attributes:
                 raise Exception('Need field %s. ' % key)
