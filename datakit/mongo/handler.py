@@ -22,20 +22,20 @@ class DBHandler(object):
     def check(self, tips, data):
     	return self._check(tips, data)
 
-    def queryAll(self, spec, db=None, collection=None):
+    def queryAll(self, spec, db=None, collection=None, **kwargs):
         db = db or self.db
-        return self.query(spec, db=db, collection=collection, qt='all')
+        return self.query(spec, db=db, collection=collection, qt='all', **kwargs)
 
-    def queryOne(self, spec, db=None, collection=None):
+    def queryOne(self, spec, db=None, collection=None, **kwargs):
         db = db or self.db
-        return self.query(spec, db=db, collection=collection, qt='one')
+        return self.query(spec, db=db, collection=collection, qt='one', **kwargs)
 
-    def query(self, spec, db=None, collection=None, qt='all'):
+    def query(self, spec, db=None, collection=None, qt='all', **kwargs):
         db = db or self.db
         if qt.lower() == 'one':
-            return self._conn[db][collection].find_one(spec)
+            return self._conn[db][collection].find_one(spec, **kwargs)
         else:
-            return self._conn[db][collection].find(spec)
+            return self._conn[db][collection].find(spec, **kwargs)
 
     def update(self, spec, doc, db=None, collection=None, upsert=False, method='SINGLE'):
         db = db or self.db
