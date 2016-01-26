@@ -8,12 +8,13 @@ MAXSIZE = 20
 class Field(object):
     _count = 0
     def __init__(self, **attributes):
-        self.name = attributes.get('name', None)
-        self.ddl = attributes.get('ddl', None)
-        self.default = attributes.get('default', None)
-        self.comment = attributes.get('comment', None)
+        self.name = attributes.get('name')
+        self.ddl = attributes.get('ddl')
+        self.pyt = attributes.get('pyt')
+        self.default = attributes.get('default')
+        self.comment = attributes.get('comment')
         self.nullable = attributes.get('nullable', 1)
-        self.unique = attributes.get('unique', None)
+        self.unique = attributes.get('unique')
         self.insertable = attributes.get('insertable', True)
         self.deleteable = attributes.get('deleteable', True)
         self.updatable = attributes.get('updatable', True)
@@ -27,14 +28,14 @@ class Field(object):
     # def __set__(self, obj, value):
     #     obj[self.name] = value
 
-    def selfexamine(self):
+    def check_config(self):
         if not self.name:
-            raise "No field name"
+            raise Exception("No field name")
         if 'creator' in self.name or ('create' in self.name and 'time' in self.name):
             self.deleteable = False
             self.updatable = False
         if not self.ddl:
-            raise "No field ddl"
+            raise Exception("No field ddl")
         if self.ddl == 'timestamp':
             self.insertable = False
             self.deleteable = False
@@ -43,6 +44,16 @@ class Field(object):
         if self.unique:
             self.nullable = 0
             self.updatable = False
+
+    def check_value(self, value, strict=False):
+        if type(value) == self.pyt:
+            return value
+        if strict:
+            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pt)))
+        else:
+            if self.default is None:
+                raise Exception('Field value has no default.' % (str(value), str(self.pt)))
+            return self.default
 
     def __str__(self):
         s = ['<%s:%s,%s,default(%s)' % (self.__class__.__name__, self.name or 'None', self.ddl or 'None', self.default or 'None')]
@@ -58,78 +69,68 @@ class Field(object):
 
 class StrField(Field):
 
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
             attributes['default'] = ''
         if not 'ddl' in attributes:
             attributes['ddl'] = 'varchar(255)'
+        attributes['pyt'] = str
         super(StrField, self).__init__(**attributes)
 
 
 class IntField(Field):
 
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
             attributes['default'] = 0
         if not 'ddl' in attributes:
             attributes['ddl'] = 'bigint'
+        attributes['pyt'] = int
         super(IntField, self).__init__(**attributes)
 
 
 class FloatField(Field):
 
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
             attributes['default'] = 0.0
         if not 'ddl' in attributes:
             attributes['ddl'] = 'float'
+        attributes['pyt'] = float
         super(FloatField, self).__init__(**attributes)
 
 
 class BoolField(Field):
 
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
             attributes['default'] = False
         if not 'ddl' in attributes:
             attributes['ddl'] = 'bool'
+        attributes['pyt'] = bool
         super(BoolField, self).__init__(**attributes)
 
 
 class TextField(Field):
 
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
             attributes['default'] = ''
         if not 'ddl' in attributes:
             attributes['ddl'] = 'text'
+        attributes['pyt'] = str
         super(TextField, self).__init__(**attributes)
-
-
-class BlobField(Field):
-
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
-            attributes['default'] = ''
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'blob'
-        super(BlobField, self).__init__(**attributes)
 
 
 class DatetimeField(Field):
 
-    def __init__(self, **attributes):
-        if not 'default' in attributes:
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
             attributes['default'] = datetime.datetime.now()
         if not 'ddl' in attributes:
             attributes['ddl'] = 'datetime'
+        attributes['pyt'] = datetime.datetime
         super(DatetimeField, self).__init__(**attributes)
-
-
-class VersionField(Field):
-
-    def __init__(self, name=None):
-        super(VersionField, self).__init__(name=name, default=0, ddl='bigint')
 
 
 _triggers = frozenset(['pre_insert', 'pre_update', 'pre_delete'])
@@ -209,6 +210,12 @@ class Model(dict):
 
     def __setattr__(self, key, value):
         self[key] = value
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+    def __getstate__(self):
+        return self.__dict__
 
     @classmethod
     def queryOne(cls, where, *args):
@@ -315,7 +322,14 @@ class MarkModel(Model):
         for key in self.__mappings__:
             if not key in attributes:
                 raise Exception('Need field %s. ' % key)
+            attributes[key] = self.__mappings__[key].check_value(attributes[key])
         super(Model, self).__init__(**attributes)
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+
+    def __getstate__(self):
+        return self.__dict__
 
 if __name__=='__main__':
     pass
