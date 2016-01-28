@@ -320,7 +320,7 @@ class MarkModel(Model):
     def __init__(self, **attributes):
         self.__mappings__['create_time'] = DatetimeField(ddl='datetime')
         self.__mappings__['update_time'] = DatetimeField(ddl='datetime')
-        self.__mappings__['tid'] = IdField(ddl='objectid')
+        self.__mappings__['tid'] = IntField(ddl='int')
         attributes['create_time'] = attributes.get('create_time', datetime.datetime.now())
         attributes['update_time'] = attributes.get('update_time', datetime.datetime.now())
         for key in self.__mappings__:
