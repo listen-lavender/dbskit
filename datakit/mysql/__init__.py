@@ -20,7 +20,7 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
     """
         递归转换mongo查询为mysql查询
     """
-    if spec == '{}':
+    if spec == {}:
         return ''
     else:
         if isinstance(spec, list):

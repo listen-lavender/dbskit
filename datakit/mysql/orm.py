@@ -256,7 +256,9 @@ class Model(dict):
             sort = 'order by' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
-        L = dbpc.handler.queryAll('select %s from `%s` where %s %s limit %d, %d' % (projection, cls.__table__, where, sort, skip, limit), [args[index][one] for index, one in enumerate(keys)])
+        if where:
+            where = 'where %s' % where
+        L = dbpc.handler.queryAll('select %s from `%s` %s %s limit %d, %d' % (projection, cls.__table__, where, sort, skip, limit), [args[index][one] for index, one in enumerate(keys)])
         return L
 
     @classmethod
@@ -332,6 +334,8 @@ class Model(dict):
 
     @classmethod
     def delete(cls, spec):
+        if spec == {}:
+            raise Exception("Wrong delete spec.")
         keys = []
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
@@ -339,14 +343,24 @@ class Model(dict):
 
     @classmethod
     def update(cls, spec, doc):
-        for k in doc:
-            if not k.startswith('$'):
-                raise Exception("Wrong update doc.")
-        items = doc.items()
+        if spec == {}:
+            raise Exception("Wrong update spec.")
+        if not '$set' in doc and not '$inc' in doc:
+            raise Exception("Wrong update doc.")
+        sets = doc.get('$set', {}).items()
+        if sets:
+            resets = [','.join('`'+one[0]+'`=%s' for one in sets)]
+        else:
+            resets = []
+        incs = doc.get('$inc', {}).items()
+        incs = ','.join('`%s`=`%s`+%d' % (one[0], one[0], one[1]) for one in incs)
+        if incs:
+            resets.append(incs)
         keys = []
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
-        dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join('`'+one[0]+'`=%s' for one in items), where), [one[1] for one in items] + [args[index][one] for index, one in enumerate(keys)])
+        print 'update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)]
+        dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)])
 
 
 if __name__=='__main__':
