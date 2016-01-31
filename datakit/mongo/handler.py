@@ -39,9 +39,6 @@ class DBHandler(object):
 
     def update(self, spec, doc, db=None, collection=None, upsert=False, method='SINGLE'):
         db = db or self.db
-        for key in doc:
-            if not '$' in key:
-                raise " Update document must be start with $. "
         multi = not method.upper() == 'SINGLE'
         return self._conn[db][collection].update(spec, doc, upsert=upsert, multi=multi)
 
@@ -55,12 +52,11 @@ class DBHandler(object):
         if method == 'SINGLE':
             if not isinstance(doc, dict):
                 raise "Single insert document must be dict type."
-            # return self._conn[db][collection].insert_one(doc).inserted_id
+            return self._conn[db][collection].insert_one(doc).inserted_id
         else:
-            if not type(doc) == list:
+            if not isinstance(doc, list):
                 raise "Bulk insert document must be list type."
-            # return self._conn[db][collection].insert_many(doc).inserted_ids
-        return self._conn[db][collection].insert(doc)
+            return self._conn[db][collection].insert_many(doc).inserted_ids
 
     def showColumns(self, table):
         """

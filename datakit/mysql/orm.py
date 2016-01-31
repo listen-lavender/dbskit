@@ -2,8 +2,11 @@
 # coding=utf-8
 import time, datetime, logging, threading, sys, traceback
 from suit import dbpc
+from . import transfer
 
 MAXSIZE = 20
+
+ORDER = {1:'asc', -1:'desc'}
 
 class Field(object):
     _count = 0
@@ -49,10 +52,10 @@ class Field(object):
         if type(value) == self.pyt:
             return value
         if strict:
-            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pt)))
+            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pyt)))
         else:
             if self.default is None:
-                raise Exception('Field value has no default.' % (str(value), str(self.pt)))
+                raise Exception('Field %s has no default.' % self.name)
             return self.default
 
     def __str__(self):
@@ -218,31 +221,56 @@ class Model(dict):
         return self.__dict__
 
     @classmethod
-    def queryOne(cls, where, *args):
+    def queryOne(cls, spec, projection={}, sort=[]):
         '''
         Find by where clause and return one result. If multiple results found, 
         only the first one returned. If no result found, return None.
         '''
-        d = dbpc.handler.queryOne('select * from `%s` %s' % (cls.__table__, where), *args)
-        return cls(**d) if d else None
+        keys = []
+        args = []
+        where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        if projection:
+            projection = ','.join(['`%s`' % k for k, v in projection.items() if v == 1])
+        else:
+            projection = '*'
+        if sort:
+            sort = 'order by' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
+        else:
+            sort = ''
+        d = dbpc.handler.queryOne('select %s from `%s` where %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
+        return d
 
     @classmethod
-    def queryAll(cls, where, *args):
+    def queryAll(cls, spec, projection={}, sort=[], skip=0, limit=10):
         '''
         Find all and return list.
         '''
-        L = dbpc.handler.queryAll('select * from `%s` %s' % (cls.__table__, where), *args)
-        return [cls(**d) for d in L]
+        keys = []
+        args = []
+        where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        if projection:
+            projection = ','.join(['`%s`' % k for k, v in projection.items() if v == 1])
+        else:
+            projection = '*'
+        if sort:
+            sort = 'order by' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
+        else:
+            sort = ''
+        L = dbpc.handler.queryAll('select %s from `%s` where %s %s limit %d, %d' % (projection, cls.__table__, where, sort, skip, limit), [args[index][one] for index, one in enumerate(keys)])
+        return L
 
     @classmethod
-    def count(cls, where, *args):
+    def count(cls, spec):
         '''
         Find by 'select count(pk) from table where ... ' and return int.
         '''
-        return len(dbpc.handler.queryAll('select id from `%s` %s' % (cls.__table__, where), *args))
+        keys = []
+        args = []
+        where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        return dbpc.handler.queryOne('select count(*) as total from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])['total']
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE, lastid=None):
+    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         if obj is not None:
@@ -269,6 +297,7 @@ class Model(dict):
                 try:
                     dbpc.handler.insert(cls._insertsql, one, method)
                     dbpc.handler.commit()
+                    return dbpc.handler.queryOne(""" select last_insert_id() as lastid; """)['lastid']
                 except:
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
@@ -302,13 +331,22 @@ class Model(dict):
                             dbpc.handler.rollback()
 
     @classmethod
-    def delete(cls, where, *args):
-        dbpc.handler.delete('select id from `%s` %s' % (cls.__table__, where), *args)
+    def delete(cls, spec):
+        keys = []
+        args = []
+        where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        return dbpc.handler.delete('delete from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])
 
     @classmethod
-    def update(cls, where, *args, **kwargs):
-        items = kwargs.items()
-        dbpc.handler.update('update `%s` set %s %s' % (cls.__table__, ','.join('`'+one[0]+'`=%s' for one in items), where), tuple(list(*args)+[one[1] for one in items]))
+    def update(cls, spec, doc):
+        for k in doc:
+            if not k.startswith('$'):
+                raise Exception("Wrong update doc.")
+        items = doc.items()
+        keys = []
+        args = []
+        where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join('`'+one[0]+'`=%s' for one in items), where), [one[1] for one in items] + [args[index][one] for index, one in enumerate(keys)])
 
 
 if __name__=='__main__':

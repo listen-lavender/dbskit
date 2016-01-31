@@ -50,10 +50,10 @@ class Field(object):
         if type(value) == self.pyt:
             return value
         if strict:
-            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pt)))
+            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pyt)))
         else:
             if self.default is None:
-                raise Exception('Field value has no default.' % (str(value), str(self.pt)))
+                raise Exception('Field %s has no default.' % self.name)
             return self.default
 
     def __str__(self):
@@ -234,34 +234,33 @@ class Model(dict):
         return self.__dict__
 
     @classmethod
-    def queryOne(cls, spec):
+    def queryOne(cls, spec, projection={}, sort=[]):
         '''
         Find by where clause and return one result. If multiple results found, 
         only the first one returned. If no result found, return None.
         '''
-        d = dbpc.handler.queryOne(spec, collection=cls.__table__)
-        return cls(**d) if d else None
+        d = dbpc.handler.queryOne(spec, collection=cls.__table__, projection=projection, sort=sort, skip=0, limit=1)
+        return d
 
     @classmethod
-    def queryAll(cls, spec):
+    def queryAll(cls, spec, projection={}, sort=[], skip=0, limit=10):
         '''
         Find all and return list.
         '''
-        L = dbpc.handler.queryAll(spec, collection=cls.__table__)
-        return [cls(**d) for d in L]
+        L = dbpc.handler.queryAll(spec, collection=cls.__table__, projection=projection, sort=sort, skip=skip, limit=limit)
+        return L
 
     @classmethod
-    def count(cls, **kwargs):
+    def count(cls, spec):
         '''
         Find by 'select count(pk) from table where ... ' and return int.
         '''
         return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE, lastid=None):
+    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
-        # dbpc.handler.insert(obj, collection=cls.__table__, method='SINGLE')
         record = None
         if obj is not None and update:
             updatekeys = {}
@@ -278,7 +277,7 @@ class Model(dict):
             if method == 'SINGLE':
                 try:
                     if obj:
-                        dbpc.handler.insert(obj, collection=cls.__table__, method=method)
+                        return dbpc.handler.insert(obj, collection=cls.__table__, method=method, bypass_document_validation=update)
                 except:
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
@@ -290,7 +289,7 @@ class Model(dict):
                     if forcexe:
                         try:
                             if cls._insertdatas:
-                                dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method)
+                                dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method, bypass_document_validation=update)
                                 cls._insertdatas = []
                         except:
                             t, v, b = sys.exc_info()
@@ -299,7 +298,7 @@ class Model(dict):
                     else:
                         if sys.getsizeof(cls._insertdatas) > maxsize:
                             try:
-                                dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method)
+                                dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method, bypass_document_validation=update)
                                 cls._insertdatas = []
                             except:
                                 t, v, b = sys.exc_info()
@@ -312,6 +311,9 @@ class Model(dict):
 
     @classmethod
     def update(cls, spec, doc):
+        for k in doc:
+            if not k.startswith('$'):
+                raise Exception("Wrong update doc.")
         dbpc.handler.update(spec, doc, collection=cls.__table__)
 
 
