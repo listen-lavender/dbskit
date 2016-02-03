@@ -1,4 +1,4 @@
-# Datakit
+# dbskit
 
 It is a collection of database tools. 
 

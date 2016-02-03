@@ -359,7 +359,6 @@ class Model(dict):
         keys = []
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
-        print 'update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)]
         dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)])
 
 
