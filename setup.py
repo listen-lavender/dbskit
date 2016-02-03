@@ -18,10 +18,10 @@ requires = [
     'pymongo>=3.0.3',
     ]
 
-datakit = __import__('datakit')
-setup(name='datakit',
-version=datakit.__version__,
-description='wecatch datakit',
+dbskit = __import__('dbskit')
+setup(name='dbskit',
+version=dbskit.__version__,
+description='wecatch dbskit',
 long_description='',
 author='haokuan',
 author_email='jingdaohao@gmail.com',
@@ -29,7 +29,7 @@ url='http://www.google.com',
 keywords='wecatch > ',
 packages=find_packages(),
 # package_data={'':['*.js', '*.css']},
-namespace_packages=['datakit',],
+namespace_packages=['dbskit',],
 include_package_data=True,
 zip_safe=False,
 install_requires=requires,
