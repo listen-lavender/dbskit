@@ -234,7 +234,7 @@ class Model(dict):
         else:
             projection = '*'
         if sort:
-            sort = 'order by' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
+            sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
         d = dbpc.handler.queryOne('select %s from `%s` where %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
@@ -253,7 +253,7 @@ class Model(dict):
         else:
             projection = '*'
         if sort:
-            sort = 'order by' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
+            sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
         if where:
@@ -269,7 +269,9 @@ class Model(dict):
         keys = []
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
-        return dbpc.handler.queryOne('select count(*) as total from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])['total']
+        if where:
+            where = 'where %s' % where
+        return dbpc.handler.queryOne('select count(*) as total from `%s` %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])['total']
 
     @classmethod
     def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE):

@@ -36,9 +36,9 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
                 return '(' + operator.join(multi) + ')'
             else:
                 if operator.strip() == 'mod':
-                    return '(' + grand + ' %s' + operator + '%s)'
+                    return '(`' + grand + '` %s' + operator + '%s)'
                 else:
-                    return '(' + grand + ' in (' + ','.join(['%s' for k in spec]) + '))'
+                    return '(`' + grand + '` in (' + ','.join(['%s' for k in spec]) + '))'
 
         elif isinstance(spec, dict):
             multi = []
@@ -52,11 +52,11 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
                     if explain(k) is None:
                         index.append(k)
                         condition.append({k:v})
-                        multi.append('(' + k + '=%s' + ')')
+                        multi.append('(`' + k + '`=%s' + ')')
                     else:
                         index.append(parent)
                         condition.append({parent:v})
-                        multi.append('(' + parent + operator + '%s' + ')')
+                        multi.append('(`' + parent + '`' + operator + '%s' + ')')
             return '(' + ' and '.join(multi) + ')'
         else:
             return ''
