@@ -73,8 +73,7 @@ class IdField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = ObjectId()
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'ObjectId'
+        attributes['ddl'] = 'ObjectId'
         attributes['pyt'] = ObjectId
         super(IdField, self).__init__(**attributes)
 
@@ -84,8 +83,7 @@ class StrField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = ''
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'str'
+        attributes['ddl'] = 'str'
         attributes['pyt'] = str
         super(StrField, self).__init__(**attributes)
 
@@ -95,8 +93,7 @@ class IntField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = 0
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'int'
+        attributes['ddl'] = 'int'
         attributes['pyt'] = int
         super(IntField, self).__init__(**attributes)
 
@@ -106,8 +103,7 @@ class FloatField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = 0.0
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'float'
+        attributes['ddl'] = 'float'
         attributes['pyt'] = float
         super(FloatField, self).__init__(**attributes)
 
@@ -117,8 +113,7 @@ class BoolField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = False
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'bool'
+        attributes['ddl'] = 'bool'
         attributes['pyt'] = bool
         super(BoolField, self).__init__(**attributes)
 

@@ -70,13 +70,22 @@ class Field(object):
         return ''.join(s)
 
 
+class IdField(Field):
+
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
+            attributes['default'] = 0
+        attributes['ddl'] = '%s(%d)' % ('int', 11)
+        attributes['pyt'] = int
+        super(IntField, self).__init__(**attributes)
+
+
 class StrField(Field):
 
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = ''
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'varchar(255)'
+        attributes['ddl'] = '%s(%d)' % (attributes.get('ddl', 'varchar'), attributes.get('max_length', 255))
         attributes['pyt'] = str
         super(StrField, self).__init__(**attributes)
 
@@ -86,8 +95,7 @@ class IntField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = 0
-        if not 'ddl' in attributes:
-            attributes['ddl'] = 'bigint'
+        attributes['ddl'] = '%s(%d)' % (attributes.get('ddl', 'int'), attributes.get('max_length', 11))
         attributes['pyt'] = int
         super(IntField, self).__init__(**attributes)
 
@@ -97,8 +105,10 @@ class FloatField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = 0.0
-        if not 'ddl' in attributes:
+        if not 'ddl' in attributes or attributes['ddl'] == 'float':
             attributes['ddl'] = 'float'
+        else:
+            attributes['ddl'] = '%s(%d)' % (attributes.get('ddl', 'double'), attributes.get('max_length', 11))
         attributes['pyt'] = float
         super(FloatField, self).__init__(**attributes)
 
