@@ -77,7 +77,7 @@ class IdField(Field):
             attributes['default'] = 0
         attributes['ddl'] = '%s(%d)' % ('int', 11)
         attributes['pyt'] = int
-        super(IntField, self).__init__(**attributes)
+        super(IdField, self).__init__(**attributes)
 
 
 class StrField(Field):
