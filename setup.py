@@ -12,7 +12,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
-requires = [
+install_requires = [
     'mysql-connector-python==1.2.3',
     'MySQL-python==1.2.5',
     'pymongo>=3.0.3',
@@ -22,18 +22,11 @@ dbskit = __import__('dbskit')
 setup(name='dbskit',
 version=dbskit.__version__,
 description='wecatch dbskit',
-long_description='',
 author='haokuan',
 author_email='jingdaohao@gmail.com',
-url='http://www.google.com',
+url='https://github.com/listen-lavender/dbskit',
 keywords='wecatch > ',
 packages=find_packages(),
-# package_data={'':['*.js', '*.css']},
-namespace_packages=['dbskit',],
-include_package_data=True,
-zip_safe=False,
-install_requires=requires,
-entry_points="",
-scripts=[],
+install_requires=install_requires,
 )
 
