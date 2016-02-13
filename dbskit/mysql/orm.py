@@ -2,7 +2,7 @@
 # coding=utf-8
 import time, datetime, logging, threading, sys, traceback
 from suit import dbpc
-from . import transfer
+from ..util import transfer
 
 MAXSIZE = 20
 
