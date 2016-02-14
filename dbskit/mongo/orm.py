@@ -29,23 +29,6 @@ class Field(object):
     # def __set__(self, obj, value):
     #     obj[self.name] = value
 
-    def check_config(self):
-        if not self.name:
-            raise Exception("No field name")
-        if 'creator' in self.name or ('create' in self.name and 'time' in self.name):
-            self.deleteable = False
-            self.updatable = False
-        if not self.ddl:
-            raise Exception("No field ddl")
-        if self.ddl == 'timestamp':
-            self.insertable = False
-            self.deleteable = False
-            self.updatable = False
-            self.default = 'current_timestamp on update current_timestamp'
-        if self.unique:
-            self.nullable = 0
-            self.updatable = False
-
     def check_value(self, value, strict=False):
         if type(value) == self.pyt:
             return value

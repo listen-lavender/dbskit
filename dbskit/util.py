@@ -35,6 +35,7 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
             if multi:
                 return '(' + operator.join(multi) + ')'
             else:
+                grand = 'id' if grand == '_id' else grand
                 if operator.strip() == 'mod':
                     return '(`' + grand + '` %s' + operator + '%s)'
                 else:
@@ -49,14 +50,16 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
                     multi.append(transfer(v, grand=parent, parent=k, index=index, condition=condition))
                 else:
                     operator = explain(k)
-                    if explain(k) is None:
+                    if operator is not None:
+                        k = parent
+                    operator = operator or '='
+                    k = 'id' if k == '_id' else k
+                    if v is None:
+                        multi.append('(`' + k + '` is null)')
+                    else:
                         index.append(k)
                         condition.append({k:v})
-                        multi.append('(`' + k + '`=%s' + ')')
-                    else:
-                        index.append(parent)
-                        condition.append({parent:v})
-                        multi.append('(`' + parent + '`' + operator + '%s' + ')')
+                        multi.append('(`' + k + '`' + operator + '%s' + ')')
             return '(' + ' and '.join(multi) + ')'
         else:
             return ''

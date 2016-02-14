@@ -31,23 +31,6 @@ class Field(object):
     # def __set__(self, obj, value):
     #     obj[self.name] = value
 
-    def check_config(self):
-        if not self.name:
-            raise Exception("No field name")
-        if 'creator' in self.name or ('create' in self.name and 'time' in self.name):
-            self.deleteable = False
-            self.updatable = False
-        if not self.ddl:
-            raise Exception("No field ddl")
-        if self.ddl == 'timestamp':
-            self.insertable = False
-            self.deleteable = False
-            self.updatable = False
-            self.default = 'current_timestamp on update current_timestamp'
-        if self.unique:
-            self.nullable = 0
-            self.updatable = False
-
     def check_value(self, value, strict=False):
         if type(value) == self.pyt:
             return value
@@ -142,6 +125,8 @@ class DatetimeField(Field):
             attributes['default'] = datetime.datetime.now()
         if not 'ddl' in attributes:
             attributes['ddl'] = 'datetime'
+        if self.ddl == 'timestamp':
+            self.default = 'current_timestamp on update current_timestamp'
         attributes['pyt'] = datetime.datetime
         super(DatetimeField, self).__init__(**attributes)
 
@@ -240,9 +225,11 @@ class Model(dict):
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
-            projection = ','.join(['`%s`' % k for k, v in projection.items() if v == 1])
+            projection = [k for k, v in projection.items() if v == 1]
         else:
-            projection = '*'
+            projection = cls.__mappings__.keys()
+            projection.append('id')
+        projection = ','.join(['`%s` as _id' % c if c == 'id' else '`%s`' % c for c in projection])
         if sort:
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
@@ -259,9 +246,11 @@ class Model(dict):
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
-            projection = ','.join(['`%s`' % k for k, v in projection.items() if v == 1])
+            projection = [k for k, v in projection.items() if v == 1]
         else:
-            projection = '*'
+            projection = cls.__mappings__.keys()
+            projection.append('id')
+        projection = ','.join(['`%s` as _id' % c if c == 'id' else '`%s`' % c for c in projection])
         if sort:
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
@@ -290,9 +279,8 @@ class Model(dict):
         if obj is not None:
             updatekeys = []
             for k, v in obj.__mappings__.iteritems():
-                if v.insertable:
-                    if not hasattr(obj, k):
-                        setattr(obj, k, v.default)
+                if not hasattr(obj, k):
+                    setattr(obj, k, v.default)
                 if update:
                     if v.updatable:
                         updatekeys.append(k)
