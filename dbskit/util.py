@@ -63,3 +63,10 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
             return '(' + ' and '.join(multi) + ')'
         else:
             return ''
+
+if __name__ == '__main__':
+    spec = {'username':'haokuan@adesk.com', 'password':'123456', 'status':{'$ne':0}}
+    index = []
+    condition = []
+    print transfer(spec, grand=None, parent='', index=[], condition=[])
+    

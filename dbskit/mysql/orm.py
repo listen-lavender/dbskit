@@ -125,7 +125,7 @@ class DatetimeField(Field):
             attributes['default'] = datetime.datetime.now()
         if not 'ddl' in attributes:
             attributes['ddl'] = 'datetime'
-        if self.ddl == 'timestamp':
+        if attributes['ddl'] == 'timestamp':
             self.default = 'current_timestamp on update current_timestamp'
         attributes['pyt'] = datetime.datetime
         super(DatetimeField, self).__init__(**attributes)
@@ -225,7 +225,7 @@ class Model(dict):
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
-            projection = [k for k, v in projection.items() if v == 1]
+            projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
         else:
             projection = cls.__mappings__.keys()
             projection.append('id')
@@ -246,7 +246,7 @@ class Model(dict):
         args = []
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
-            projection = [k for k, v in projection.items() if v == 1]
+            projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
         else:
             projection = cls.__mappings__.keys()
             projection.append('id')
