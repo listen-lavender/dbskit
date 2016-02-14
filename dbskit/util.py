@@ -56,6 +56,8 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
                     k = 'id' if k == '_id' else k
                     if v is None:
                         multi.append('(`' + k + '` is null)')
+                    elif k == '':
+                        multi.append('("" = "")')
                     else:
                         index.append(k)
                         condition.append({k:v})
@@ -63,3 +65,13 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
             return '(' + ' and '.join(multi) + ')'
         else:
             return ''
+
+if __name__ == '__main__':
+    spec = {'username':'haokuan@adesk.com', 'password':'123456', 'status':{'$ne':0}}
+    spec = {'$or':[{'uid':''}, {'':''}]}
+    index = []
+    condition = []
+    print transfer(spec, grand=None, parent='', index=index, condition=condition)
+    print condition
+    print index
+    
