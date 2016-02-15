@@ -2,55 +2,12 @@
 # coding=utf-8
 import time, datetime, logging, threading, sys, traceback
 from suit import dbpc
-from ..util import transfer
+from ..util import rectify, transfer
+from .. import Field
 
 MAXSIZE = 20
 
 ORDER = {1:'asc', -1:'desc'}
-
-class Field(object):
-    _count = 0
-    def __init__(self, **attributes):
-        self.name = attributes.get('name')
-        self.ddl = attributes.get('ddl')
-        self.pyt = attributes.get('pyt')
-        self.default = attributes.get('default')
-        self.comment = attributes.get('comment')
-        self.nullable = attributes.get('nullable', 1)
-        self.unique = attributes.get('unique')
-        self.insertable = attributes.get('insertable', True)
-        self.deleteable = attributes.get('deleteable', True)
-        self.updatable = attributes.get('updatable', True)
-        self.queryable = attributes.get('queryable', True)
-        Field._count += 1
-        self.order = Field._count
-
-    # def __get__(self, obj, cls):
-    #     return obj[self.name]
-        
-    # def __set__(self, obj, value):
-    #     obj[self.name] = value
-
-    def check_value(self, value, strict=False):
-        if type(value) == self.pyt:
-            return value
-        if strict:
-            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pyt)))
-        else:
-            if self.default is None:
-                raise Exception('Field %s has no default.' % self.name)
-            return self.default
-
-    def __str__(self):
-        s = ['<%s:%s,%s,default(%s)' % (self.__class__.__name__, self.name or 'None', self.ddl or 'None', self.default or 'None')]
-        # self.nullable and s.append('N')
-        self.insertable and s.append('I')
-        self.deleteable and s.append('D')
-        self.updatable and s.append('U')
-        self.queryable and s.append('Q')
-        s.append('>')
-        self.comment and s.append(self.comment or '')
-        return ''.join(s)
 
 
 class IdField(Field):
@@ -61,6 +18,10 @@ class IdField(Field):
         attributes['ddl'] = '%s(%d)' % ('int', 11)
         attributes['pyt'] = int
         super(IdField, self).__init__(**attributes)
+
+    @classmethod
+    def verify(cls, val):
+        return int(val)
 
 
 class StrField(Field):
@@ -163,6 +124,8 @@ class ModelMetaclass(type):
     Metaclass for model objects.
     '''
     def __new__(cls, name, bases, attrs):
+        for b in bases:
+            attrs = dict(getattr(b, '__mappings__', {}), **attrs)
         # skip base Model class:
         if name=='Model':
             return type.__new__(cls, name, bases, attrs)
@@ -223,6 +186,7 @@ class Model(dict):
         '''
         keys = []
         args = []
+        rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
             projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
@@ -244,6 +208,7 @@ class Model(dict):
         '''
         keys = []
         args = []
+        rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
             projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
@@ -267,6 +232,7 @@ class Model(dict):
         '''
         keys = []
         args = []
+        rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if where:
             where = 'where %s' % where
@@ -338,6 +304,7 @@ class Model(dict):
             raise Exception("Wrong delete spec.")
         keys = []
         args = []
+        rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         return dbpc.handler.delete('delete from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])
 
@@ -358,6 +325,7 @@ class Model(dict):
             resets.append(incs)
         keys = []
         args = []
+        rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)])
 

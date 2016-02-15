@@ -3,52 +3,10 @@
 import time, datetime, logging, threading, sys, traceback
 from suit import dbpc
 from bson.objectid import ObjectId
+from ..util import rectify
+from .. import Field
 
 MAXSIZE = 20
-
-class Field(object):
-    _count = 0
-    def __init__(self, **attributes):
-        self.name = attributes.get('name')
-        self.ddl = attributes.get('ddl')
-        self.pyt = attributes.get('pyt')
-        self.default = attributes.get('default')
-        self.comment = attributes.get('comment')
-        self.nullable = attributes.get('nullable', 1)
-        self.unique = attributes.get('unique')
-        self.insertable = attributes.get('insertable', True)
-        self.deleteable = attributes.get('deleteable', True)
-        self.updatable = attributes.get('updatable', True)
-        self.queryable = attributes.get('queryable', True)
-        Field._count += 1
-        self.order = Field._count
-
-    # def __get__(self, obj, cls):
-    #     return obj[self.name]
-        
-    # def __set__(self, obj, value):
-    #     obj[self.name] = value
-
-    def check_value(self, value, strict=False):
-        if type(value) == self.pyt:
-            return value
-        if strict:
-            raise Exception('Strict mode, field value %s is not right type %s.' % (str(value), str(self.pyt)))
-        else:
-            if self.default is None:
-                raise Exception('Field %s has no default.' % self.name)
-            return self.default
-
-    def __str__(self):
-        s = ['<%s:%s,%s,default(%s)' % (self.__class__.__name__, self.name or 'None', self.ddl or 'None', self.default or 'None')]
-        # self.nullable and s.append('N')
-        self.insertable and s.append('I')
-        self.deleteable and s.append('D')
-        self.updatable and s.append('U')
-        self.queryable and s.append('Q')
-        s.append('>')
-        self.comment and s.append(self.comment or '')
-        return ''.join(s)
 
 
 class IdField(Field):
@@ -59,6 +17,10 @@ class IdField(Field):
         attributes['ddl'] = 'ObjectId'
         attributes['pyt'] = ObjectId
         super(IdField, self).__init__(**attributes)
+
+    @classmethod
+    def verify(cls, val):
+        return ObjectId(val)
 
 
 class StrField(Field):
@@ -159,6 +121,8 @@ class ModelMetaclass(type):
     Metaclass for model objects.
     '''
     def __new__(cls, name, bases, attrs):
+        for b in bases:
+            attrs = dict(getattr(b, '__mappings__', {}), **attrs)
         # skip base Model class:
         if name=='Model':
             return type.__new__(cls, name, bases, attrs)
@@ -212,19 +176,21 @@ class Model(dict):
         return self.__dict__
 
     @classmethod
-    def queryOne(cls, spec, projection={}, sort=[]):
+    def queryOne(cls, spec, projection=None, sort=[]):
         '''
         Find by where clause and return one result. If multiple results found, 
         only the first one returned. If no result found, return None.
         '''
+        rectify(cls, IdField, 'IdField', spec)
         d = dbpc.handler.queryOne(spec, collection=cls.__table__, projection=projection, sort=sort, skip=0, limit=1)
         return d
 
     @classmethod
-    def queryAll(cls, spec, projection={}, sort=[], skip=0, limit=10):
+    def queryAll(cls, spec, projection=None, sort=[], skip=0, limit=10):
         '''
         Find all and return list.
         '''
+        rectify(cls, IdField, 'IdField', spec)
         L = dbpc.handler.queryAll(spec, collection=cls.__table__, projection=projection, sort=sort, skip=skip, limit=limit)
         return L
 
@@ -233,6 +199,7 @@ class Model(dict):
         '''
         Find by 'select count(pk) from table where ... ' and return int.
         '''
+        rectify(cls, IdField, 'IdField', spec)
         return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
@@ -285,6 +252,7 @@ class Model(dict):
 
     @classmethod
     def delete(cls, spec):
+        rectify(cls, IdField, 'IdField', spec)
         dbpc.handler.delete(spec, collection=cls.__table__)
 
     @classmethod
@@ -292,6 +260,7 @@ class Model(dict):
         for k in doc:
             if not k.startswith('$'):
                 raise Exception("Wrong update doc.")
+        rectify(cls, IdField, 'IdField', spec)
         dbpc.handler.update(spec, doc, collection=cls.__table__)
 
 
