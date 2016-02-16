@@ -53,8 +53,9 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
                 k = 'id' if k == '_id' else k
                 if v is None:
                     multi.append('(`' + k + '` is null)')
-                elif k == '':
-                    multi.append('("" = "")')
+                elif k == '' or k is None:
+                    raise Exception("Empty string key or None key.")
+                    # multi.append('("" = "")')
                 else:
                     index.append(k)
                     condition.append({k:v})
