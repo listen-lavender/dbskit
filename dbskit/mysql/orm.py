@@ -188,6 +188,7 @@ class Model(dict):
         args = []
         rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        projection['_id'] = projection.get('_id', 1)
         if projection:
             projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
         else:
@@ -210,6 +211,7 @@ class Model(dict):
         args = []
         rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+        projection['_id'] = projection.get('_id', 1)
         if projection:
             projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
         else:
