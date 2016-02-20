@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # coding=utf-8
-import time, datetime, logging, threading, sys, traceback
+import time, datetime, logging, threading, sys, traceback, hashlib
 from suit import dbpc
 from ..util import rectify, transfer
 from .. import Field
@@ -22,6 +22,27 @@ class IdField(Field):
     @classmethod
     def verify(cls, val):
         return int(val)
+
+
+class PassField(Field):
+
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
+            m = hashlib.md5()
+            origin = '123456'
+            m.update(origin)
+            secret = m.hexdigest()
+            attributes['default'] = m.hexdigest()
+        attributes['ddl'] = 'ObjectId'
+        attributes['pyt'] = ObjectId
+        super(IdField, self).__init__(**attributes)
+
+    @classmethod
+    def verify(cls, val):
+        m = hashlib.md5()
+        origin = '123456'
+        m.update(val)
+        return m.hexdigest()
 
 
 class StrField(Field):
