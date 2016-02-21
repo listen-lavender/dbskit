@@ -63,4 +63,4 @@ class Field(object):
 
     @classmethod
     def verify(cls, val):
-        pass
+        return val
