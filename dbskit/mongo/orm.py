@@ -231,7 +231,6 @@ class Model(dict):
         if obj is not None and update:
             updatekeys = {}
             if '_id' in obj:
-                updatekeys['_id'] = obj['_id']
                 del obj['_id']
             for k, v in obj.__mappings__.iteritems():
                 if v.unique:

@@ -267,7 +267,6 @@ class Model(dict):
             cls.__lock = threading.Lock()
         if obj is not None:
             if '_id' in obj:
-                obj['id'] = obj['_id']
                 del obj['_id']
             updatekeys = []
             for k, v in obj.__mappings__.iteritems():
