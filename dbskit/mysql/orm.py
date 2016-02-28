@@ -282,10 +282,9 @@ class Model(dict):
     def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
-        if '_id' in obj:
-            obj['id'] = obj['_id']
-            del obj['_id']
         if obj is not None:
+            if '_id' in obj:
+                del obj['_id']
             updatekeys = []
             for k, v in obj.__mappings__.iteritems():
                 if not hasattr(obj, k):
