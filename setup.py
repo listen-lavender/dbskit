@@ -16,6 +16,7 @@ install_requires = [
     'mysql-connector-python==1.2.3',
     'MySQL-python==1.2.5',
     'pymongo>=3.0.3',
+    'kokolog',
     ]
 
 dbskit = __import__('dbskit')

@@ -8,6 +8,23 @@ from .. import Field
 
 MAXSIZE = 20
 
+try:
+    from kokolog.aboutfile import modulename, modulepath
+    from kokolog.prettyprint import logprint
+except:
+    def modulename(n):
+        return None
+
+    def modulepath(p):
+        return None
+
+    def logprint(n, p):
+        def _wraper(*args, **kwargs):
+            print(' '.join(args))
+        return _wraper, None
+
+_print, logger = logprint(modulename(__file__), modulepath(__file__))
+
 
 class IdField(Field):
 
@@ -247,7 +264,8 @@ class Model(dict):
                 except:
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
-                    print(': ', ','.join(err_messages), '\n')
+                    txt = ','.join(err_messages)
+                    _print('db ', tid=obj.get(tid, ''), sname='', args='', kwargs='', txt=txt)
             else:
                 with cls.__lock:
                     if obj is not None:
@@ -260,7 +278,8 @@ class Model(dict):
                         except:
                             t, v, b = sys.exc_info()
                             err_messages = traceback.format_exception(t, v, b)
-                            print(': ', ','.join(err_messages), '\n')
+                            txt = ','.join(err_messages)
+                            _print('db ', tid=cls._insertdatas[0].get(tid, ''), sname='', args='', kwargs='', txt=txt)
                     else:
                         if sys.getsizeof(cls._insertdatas) > maxsize:
                             try:
@@ -269,7 +288,9 @@ class Model(dict):
                             except:
                                 t, v, b = sys.exc_info()
                                 err_messages = traceback.format_exception(t, v, b)
-                                print(': ', ','.join(err_messages), '\n')
+                                txt = ','.join(err_messages)
+                                _print('db ', tid=cls._insertdatas[0].get(tid, ''), sname='', args='', kwargs='', txt=txt)
+
 
     @classmethod
     def delete(cls, spec):
