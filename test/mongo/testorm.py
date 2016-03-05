@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # coding=utf-8
-from datakit.mongo.orm import *
-from datakit.mongo.suit import dbpc, withMongo
+from dbskit.mongo.orm import *
+from dbskit.mongo.suit import dbpc, withMongo
 
 class MarkModel(Model):
 
@@ -26,12 +26,12 @@ class MarkModel(Model):
 
 def initDB():
     dbpc.addDB('test', 20, host='localhost',
-                port=27017,
+                port=27018,
                 user='root',
                 passwd='',
                 db='dandan-jiang')
     dbpc.addDB('test', 20, host='localhost',
-                port=27017,
+                port=27018,
                 db='dandan-jiang')
 
 '''
@@ -54,6 +54,7 @@ class ProxyLog(Model):
     __table__ = 'grab_proxy_log'
     pid = IntField(ddl='int(11)')
     elapse = FloatField(ddl='float')
+    protocol = StrField(ddl='str')
     create_time = DatetimeField(ddl='datetime')
 
 initDB()
@@ -61,14 +62,8 @@ initDB()
 @withMongo('test', resutype='DICT')
 def test():
     # a = Proxy.queryAll('where ip in (%s, %s)', ('110.52.221.27', '110.72.26.214'))
-    for one in Proxy.queryAll({}, {'ip':1, 'port':1}, skip=7, limit=10):
-        print one
-    print '-------'
-    a = Proxy.queryOne({'ip':'110.52.221.27'}, {'ip':1, 'port':1, 'usenum':1})
-    print a
-    Proxy.update({'ip':'110.52.221.27'}, {'$inc':{'port':1}, '$set':{'usenum':2}})
-    a = Proxy.queryOne({'ip':'110.52.221.27'}, {'ip':1, 'port':1, 'usenum':1})
-    print a
+    pl = ProxyLog(pid=1, elapse=1, protocol='我们', create_time='2013-01-01 10:10:10')
+    print str(pl)
     
 
 

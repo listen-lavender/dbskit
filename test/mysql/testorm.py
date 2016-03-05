@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # coding=utf-8
-from datakit.mysql import transfer
-from datakit.mysql.orm import *
-from datakit.mysql.suit import dbpc, withMysql
+from dbskit.mysql import transfer
+from dbskit.mysql.orm import *
+from dbskit.mysql.suit import dbpc, withMysql
 
 class MarkModel(Model):
 
