@@ -267,7 +267,7 @@ class Model(dict):
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
                     txt = ','.join(err_messages)
-                    _print('db ', tid=obj.get(tid, ''), sname='', args='', kwargs='', txt=txt)
+                    _print('db ', tid=obj.get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
             else:
                 with cls.__lock:
                     if obj is not None:
@@ -281,7 +281,7 @@ class Model(dict):
                             t, v, b = sys.exc_info()
                             err_messages = traceback.format_exception(t, v, b)
                             txt = ','.join(err_messages)
-                            _print('db ', tid=cls._insertdatas[0].get(tid, ''), sname='', args='', kwargs='', txt=txt)
+                            _print('db ', tid=cls._insertdatas[0].get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                     else:
                         if sys.getsizeof(cls._insertdatas) > maxsize:
                             try:
@@ -291,7 +291,7 @@ class Model(dict):
                                 t, v, b = sys.exc_info()
                                 err_messages = traceback.format_exception(t, v, b)
                                 txt = ','.join(err_messages)
-                                _print('db ', tid=cls._insertdatas[0].get(tid, ''), sname='', args='', kwargs='', txt=txt)
+                                _print('db ', tid=cls._insertdatas[0].get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
 
 
     @classmethod

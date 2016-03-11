@@ -292,8 +292,10 @@ class Model(dict):
                 if update:
                     if v.updatable:
                         updatekeys.append(k)
-            items = obj.items()
+            items = [one for one in obj.items() if not one[0] == 'tid']
             items.sort(lambda x,y:cmp(x[0], y[0]))
+            if 'tid' in obj:
+                items.append(('tid', obj['tid']))
             if cls._insertsql is None or method == 'SINGLE':
                 if update:
                     cls._insertsql = 'insert into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in updatekeys if not one == 'create_time')
@@ -312,7 +314,7 @@ class Model(dict):
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
                     txt = ','.join(err_messages)
-                    _print('db ', tid=obj.get(tid, ''), sname='', args='', kwargs='', txt=txt)
+                    _print('db ', tid=one[-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                     dbpc.handler.rollback()
         else:
             with cls.__lock:
@@ -328,7 +330,7 @@ class Model(dict):
                         t, v, b = sys.exc_info()
                         err_messages = traceback.format_exception(t, v, b)
                         txt = ','.join(err_messages)
-                        _print('db ', tid=cls._insertdatas[0].get(tid, ''), sname='', args='', kwargs='', txt=txt)
+                        _print('db ', tid=cls._insertdatas[0][-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                         dbpc.handler.rollback()
                 else:
                     if sys.getsizeof(cls._insertdatas) > maxsize:
@@ -340,7 +342,7 @@ class Model(dict):
                             t, v, b = sys.exc_info()
                             err_messages = traceback.format_exception(t, v, b)
                             txt = ','.join(err_messages)
-                            _print('db ', tid=cls._insertdatas[0].get(tid, ''), sname='', args='', kwargs='', txt=txt)
+                            _print('db ', tid=cls._insertdatas[0][-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                             dbpc.handler.rollback()
 
     @classmethod
