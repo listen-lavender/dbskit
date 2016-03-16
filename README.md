@@ -1,5 +1,6 @@
 # dbskit
 [![Build Status](https://api.travis-ci.org/listen-lavender/dbskit.svg?branch=master)](https://api.travis-ci.org/listen-lavender/dbskit)
+
 dbskit是一个简单的封装了mongo，mysql的数据库操作的工具集，支持线程和协程；orm的mongo和mysql操作是一致的，都遵循mong语法，例如query(select id, name from user where id = 2)需写成query({'id':2}, {'id':1, 'name':1})，操作的一致就可以轻松切换项目的数据库，只需要修改数据库的配置连接就可以了，当然sqlalchemy这种大型的orm已经支持的很好了，但是dbskit对于小型项目更直观，简单，方便控制.
 
 ## mysql
@@ -109,3 +110,7 @@ Satisfaction, guaranteed.
 ## Documentation
 
     TODO
+
+## Discussion and support
+
+Report bugs on the *GitHub issue tracker <https://github.com/listen-lavender/dbskit/issues*. 
