@@ -16,7 +16,7 @@ dbskit是一个简单的封装了mongo，mysql的数据库操作的工具集，�
 
 Here is a simple example orm operation for Dbskit:
 
-.. code-block:: python
+````python
 
     # coding=utf-8
     from dbskit.mysql import transfer
@@ -92,16 +92,17 @@ Here is a simple example orm operation for Dbskit:
 
     if __name__ == '__main__':
         test()
-
+````
 
 ## Installation
 
 To install Requests, simply:
 
-.. code-block:: bash
+````bash
 
     $ pip install dbskit
     ✨🍰✨
+````
 
 Satisfaction, guaranteed.
 
