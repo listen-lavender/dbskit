@@ -97,7 +97,7 @@ Here is a simple example orm operation for Dbskit:
 
 ## Installation
 
-To install Requests, simply:
+To install dbskit, simply:
 
 ````bash
 
