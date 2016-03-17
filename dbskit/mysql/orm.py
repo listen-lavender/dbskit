@@ -237,7 +237,9 @@ class Model(dict):
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
-        d = dbpc.handler.queryOne('select %s from `%s` where %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
+        if where:
+            where = 'where %s' % where
+        d = dbpc.handler.queryOne('select %s from `%s` %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
         return d
 
     @classmethod
