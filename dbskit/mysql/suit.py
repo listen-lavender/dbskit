@@ -254,6 +254,15 @@ def withMysql(markname, resutype='TUPLE', autocommit=False):
         return wrapper
     return wrapped
 
+@withMongo(RDB, resutype='DICT')
+def withMysqlCount(table, spec):
+    keys = []
+    args = []
+    where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+    if where:
+        where = 'where %s' % where
+    return dbpc.handler.queryOne('select count(*) as total from `%s` %s' % (table, where), [args[index][one] for index, one in enumerate(keys)])['total']
+
 @withMysql(RDB, resutype='DICT')
 def withMysqlQuery(table, spec, projection={}, sort=[], skip=0, limit=10, qt='all'):
     """

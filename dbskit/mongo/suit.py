@@ -169,6 +169,10 @@ def withMongo(markname, connect=None, resutype='DICT', autocommit=False):
     return wrapped
 
 @withMongo(RDB, resutype='DICT')
+def withMongoCount(table, spec):
+    return dbpc.handler.queryAll(spec, collection=table).count()
+
+@withMongo(RDB, resutype='DICT')
 def withMongoQuery(table, spec, projection=None, sort=[], skip=0, limit=10, qt='all'):
     if qt.lower() == 'all':
         return dbpc.handler.queryAll(spec, table, projection=projection, sort=sort, skip=skip, limit=limit)
