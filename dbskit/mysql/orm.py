@@ -237,7 +237,9 @@ class Model(dict):
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
-        d = dbpc.handler.queryOne('select %s from `%s` where %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
+        if where:
+            where = 'where %s' % where
+        d = dbpc.handler.queryOne('select %s from `%s` %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
         return d
 
     @classmethod
@@ -292,10 +294,14 @@ class Model(dict):
                 if update:
                     if v.updatable:
                         updatekeys.append(k)
-            items = [one for one in obj.items() if not one[0] == 'tid']
+
+            tid = obj.pop('tid', None)
+            items = obj.items()
             items.sort(lambda x,y:cmp(x[0], y[0]))
-            if 'tid' in obj:
-                items.append(('tid', obj['tid']))
+            if tid:
+                items.append(('tid', tid))
+                obj['tid'] = tid
+
             if cls._insertsql is None or method == 'SINGLE':
                 if update:
                     cls._insertsql = 'insert into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in updatekeys if not one == 'create_time')
