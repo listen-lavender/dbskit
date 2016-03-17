@@ -15,6 +15,7 @@ import sys
 
 import handler
 from .. import singleton
+from ..util import transfer
 from error import ConnectionNotInPoolError, \
                   ConnectionPoolOverLoadError, \
                   ClassAttrNameConflictError, \
@@ -25,6 +26,7 @@ RDB = 'rdb'
 WDB = 'wdb'
 MINLIMIT = 10
 MAXLIMIT = 40
+ORDER = {1:'asc', -1:'desc'}
 customattrs = lambda cls:[attr for attr in dir(cls) if not attr.startswith('_')]
 
 
@@ -253,36 +255,73 @@ def withMysql(markname, resutype='TUPLE', autocommit=False):
     return wrapped
 
 @withMysql(RDB, resutype='DICT')
-def withMysqlQuery(sql, data=None, qt='all'):
+def withMysqlQuery(table, spec, projection={}, sort=[], skip=0, limit=10, qt='all'):
     """
     :param markname:
     :return:the decorator with specific db connection
     """
-    return dbpc.handler.query(sql, data, qt)
+    keys = []
+    args = []
+    where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+    if projection:
+        projection['_id'] = projection.get('_id', 1)
+        projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
+        projection = ','.join(['`%s` as _id' % c if c == 'id' else '`%s`' % c for c in projection])
+    else:
+        projection = '*, `id` as `_id`'
+    if sort:
+        sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
+    else:
+        sort = ''
+    if where:
+        where = 'where %s' % where
+
+    if qt.lower() == 'all':
+        return dbpc.handler.queryAll('select %s from `%s` %s %s limit %d, %d' % (projection, table, where, sort, skip, limit), [args[index][one] for index, one in enumerate(keys)])
+    else:
+        return dbpc.handler.queryOne('select %s from `%s` %s %s limit %d, %d' % (projection, table, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
 
 @withMysql(WDB, autocommit=True)
-def withMysqlInsert(sql, data=None, method='SINGLE'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.insert(sql, data, method)
+def withMysqlInsert(table, doc, keycol, update=True):
+    items = doc.items()
+    items.sort(lambda x,y:cmp(x[0], y[0]))
+
+    if update:
+        _insertsql = 'insert into `%s` (%s) ' % (table, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in keycol if not one == 'create_time')
+    else:
+        _insertsql = 'insert ignore into `%s` (%s) ' % (table, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items)
+    one = tuple([i[1] for i in items])
+    return dbpc.handler.insert(_insertsql, one)
 
 @withMysql(WDB, autocommit=True)
-def withMysqlDelete(sql, data=None, method='SINGLE'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.delete(sql, data, method)
+def withMysqlDelete(table, spec):
+    if spec == {}:
+        raise Exception("Wrong delete spec.")
+    keys = []
+    args = []
+    where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+    dbpc.handler.delete('delete from `%s` where %s' % (table, where), [args[index][one] for index, one in enumerate(keys)])
 
 @withMysql(WDB, autocommit=True)
-def withMysqlUpdate(sql, data=None, method='SINGLE'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.update(sql, data, method)
+def withMysqlUpdate(table, spec, doc):
+    if spec == {}:
+        raise Exception("Wrong update spec.")
+    if not '$set' in doc and not '$inc' in doc:
+        raise Exception("Wrong update doc.")
+    sets = doc.get('$set', {}).items()
+    if sets:
+        resets = [','.join('`'+one[0]+'`=%s' for one in sets)]
+    else:
+        resets = []
+    incs = doc.get('$inc', {}).items()
+    incs = ','.join('`%s`=`%s`+%d' % (one[0], one[0], one[1]) for one in incs)
+    if incs:
+        resets.append(incs)
+    keys = []
+    args = []
+    where = transfer(spec, grand=None, parent='', index=keys, condition=args)
+    dbpc.handler.update('update `%s` set %s where %s' % (table, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)])
+
 
 if __name__ == "__main__":
 

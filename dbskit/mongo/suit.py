@@ -169,36 +169,36 @@ def withMongo(markname, connect=None, resutype='DICT', autocommit=False):
     return wrapped
 
 @withMongo(RDB, resutype='DICT')
-def withMongoQuery(doc, data=None, qt='all'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.query(doc, data, qt)
+def withMongoQuery(table, spec, projection=None, sort=[], skip=0, limit=10, qt='all'):
+    if qt.lower() == 'all':
+        return dbpc.handler.queryAll(spec, table, projection=projection, sort=sort, skip=skip, limit=limit)
+    else:
+        return dbpc.handler.queryOne(spec, table, projection=projection, sort=sort, skip=0, limit=1)
 
 @withMongo(WDB, autocommit=True)
-def withMongoInsert(doc, data=None, method='SINGLE'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.insert(doc, data, method)
+def withMongoInsert(table, doc, keycol, update=True):
+    flag = True
+    if update:
+        condition = {}
+        for kc in keycol:
+            condition[kc] = doc[kc]
+        record = dbpc.handler.queryOne(condition, collection=table)
+        flag = record is None
+    if flag:
+        return dbpc.handler.insert(doc, collection=table)
+    elif update:
+        dbpc.handler.update({'_id':record['_id']}, {'$set':doc}, collection=table)
 
 @withMongo(WDB, autocommit=True)
-def withMongoDelete(doc, data=None, method='SINGLE'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.delete(doc, data, method)
+def withMongoDelete(table, spec):
+    dbpc.handler.delete(spec, collection=table)
 
 @withMongo(WDB, autocommit=True)
-def withMongoUpdate(doc, data=None, method='SINGLE'):
-    """
-    :param markname:
-    :return:the decorator with specific db connection
-    """
-    return dbpc.handler.update(doc, data, method)
+def withMongoUpdate(table, spec, doc):
+    for k in doc:
+        if not k.startswith('$'):
+            raise Exception("Wrong update doc.")
+    dbpc.handler.update(spec, doc, collection=table)
 
 if __name__ == "__main__":
 

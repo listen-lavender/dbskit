@@ -359,7 +359,7 @@ class Model(dict):
         args = []
         rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
-        return dbpc.handler.delete('delete from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])
+        dbpc.handler.delete('delete from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])
 
     @classmethod
     def update(cls, spec, doc):
