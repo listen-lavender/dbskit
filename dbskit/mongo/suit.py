@@ -175,9 +175,9 @@ def withMongoCount(table, spec):
 @withMongo(RDB, resutype='DICT')
 def withMongoQuery(table, spec, projection=None, sort=[], skip=0, limit=10, qt='all'):
     if qt.lower() == 'all':
-        return dbpc.handler.queryAll(spec, table, projection=projection, sort=sort, skip=skip, limit=limit)
+        return dbpc.handler.queryAll(spec, collection=table, projection=projection, sort=sort, skip=skip, limit=limit)
     else:
-        return dbpc.handler.queryOne(spec, table, projection=projection, sort=sort, skip=0, limit=1)
+        return dbpc.handler.queryOne(spec, collection=table, projection=projection, sort=sort, skip=0, limit=1)
 
 @withMongo(WDB, autocommit=True)
 def withMongoInsert(table, doc, keycol, update=True):

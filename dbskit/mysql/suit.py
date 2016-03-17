@@ -254,7 +254,7 @@ def withMysql(markname, resutype='TUPLE', autocommit=False):
         return wrapper
     return wrapped
 
-@withMongo(RDB, resutype='DICT')
+@withMysql(RDB, resutype='DICT')
 def withMysqlCount(table, spec):
     keys = []
     args = []
