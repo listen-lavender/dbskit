@@ -3,10 +3,9 @@
 import time, datetime, logging, threading, sys, traceback, hashlib
 from suit import dbpc
 from bson.objectid import ObjectId
+from . import CFG
 from ..util import rectify
 from .. import Field
-
-MAXSIZE = 20
 
 try:
     from kokolog.aboutfile import modulename, modulepath
@@ -241,7 +240,7 @@ class Model(dict):
         return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE):
+    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=CFG._BUFFER):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         record = None

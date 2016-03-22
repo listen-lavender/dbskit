@@ -14,6 +14,7 @@ import traceback
 import sys
 
 import handler
+from . import CFG
 from .. import singleton
 from ..util import transfer
 from error import ConnectionNotInPoolError, \
@@ -22,8 +23,6 @@ from error import ConnectionNotInPoolError, \
                   ConnectionNotFoundError, \
                   ConnectionNameConflictError
 
-RDB = 'rdb'
-WDB = 'wdb'
 MINLIMIT = 10
 MAXLIMIT = 40
 ORDER = {1:'asc', -1:'desc'}
@@ -229,7 +228,7 @@ class DBPoolCollector(object):
 dbpc = DBPoolCollector(handler.DBHandler, delegate=True)
 # dbpc = None
 
-def withMysql(markname, resutype='TUPLE', autocommit=False):
+def withMysql(mark, resutype='TUPLE', autocommit=False):
     """
     :param markname:
     :return:the decorator with specific db connection
@@ -237,8 +236,12 @@ def withMysql(markname, resutype='TUPLE', autocommit=False):
     def wrapped(fun):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
+            if hasattr(mark, '__call__'):
+                markname = mark()
+            else:
+                markname = mark
             if not dbpc._collection.has_key(markname):
-                raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection")
+                raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection" % markname)
             if dbpc.handler is None:
                 dbpc.connect(markname, resutype=resutype, autocommit=autocommit)
             try:
@@ -254,7 +257,7 @@ def withMysql(markname, resutype='TUPLE', autocommit=False):
         return wrapper
     return wrapped
 
-@withMysql(RDB, resutype='DICT')
+@withMysql(CFG.R, resutype='DICT')
 def withMysqlCount(table, spec):
     keys = []
     args = []
@@ -263,7 +266,7 @@ def withMysqlCount(table, spec):
         where = 'where %s' % where
     return dbpc.handler.queryOne('select count(*) as total from `%s` %s' % (table, where), [args[index][one] for index, one in enumerate(keys)])['total']
 
-@withMysql(RDB, resutype='DICT')
+@withMysql(CFG.R, resutype='DICT')
 def withMysqlQuery(table, spec, projection={}, sort=[], skip=0, limit=10, qt='all'):
     """
     :param markname:
@@ -290,7 +293,7 @@ def withMysqlQuery(table, spec, projection={}, sort=[], skip=0, limit=10, qt='al
     else:
         return dbpc.handler.queryOne('select %s from `%s` %s %s limit %d, %d' % (projection, table, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
 
-@withMysql(WDB, autocommit=True)
+@withMysql(CFG.W, autocommit=True)
 def withMysqlInsert(table, doc, keycol, update=True):
     items = doc.items()
     items.sort(lambda x,y:cmp(x[0], y[0]))
@@ -302,7 +305,7 @@ def withMysqlInsert(table, doc, keycol, update=True):
     one = tuple([i[1] for i in items])
     return dbpc.handler.insert(_insertsql, one)
 
-@withMysql(WDB, autocommit=True)
+@withMysql(CFG.W, autocommit=True)
 def withMysqlDelete(table, spec):
     if spec == {}:
         raise Exception("Wrong delete spec.")
@@ -311,7 +314,7 @@ def withMysqlDelete(table, spec):
     where = transfer(spec, grand=None, parent='', index=keys, condition=args)
     dbpc.handler.delete('delete from `%s` where %s' % (table, where), [args[index][one] for index, one in enumerate(keys)])
 
-@withMysql(WDB, autocommit=True)
+@withMysql(CFG.W, autocommit=True)
 def withMysqlUpdate(table, spec, doc):
     if spec == {}:
         raise Exception("Wrong update spec.")

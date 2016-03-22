@@ -2,10 +2,9 @@
 # coding=utf-8
 import time, datetime, logging, threading, sys, traceback, hashlib
 from suit import dbpc
+from . import CFG
 from ..util import rectify, transfer
 from .. import Field
-
-MAXSIZE = 20
 
 ORDER = {1:'asc', -1:'desc'}
 
@@ -281,7 +280,7 @@ class Model(dict):
         return dbpc.handler.queryOne('select count(*) as total from `%s` %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])['total']
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=MAXSIZE):
+    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=CFG._BUFFER):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         if obj is not None:

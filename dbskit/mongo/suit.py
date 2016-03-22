@@ -14,13 +14,12 @@ import traceback
 import sys
 
 import handler
+from . import CFG
 from .. import singleton
 from error import ClassAttrNameConflictError, \
                   ConnectionNotFoundError, \
                   ConnectionNameConflictError
 
-RDB = 'rdb'
-WDB = 'wdb'
 MINLIMIT = 10
 MAXLIMIT = 40
 customattrs = lambda cls:[attr for attr in dir(cls) if not attr.startswith('_')]
@@ -144,7 +143,7 @@ class DBPoolCollector(object):
 
 dbpc = DBPoolCollector(handler.DBHandler, delegate=True)
 
-def withMongo(markname, connect=None, resutype='DICT', autocommit=False):
+def withMongo(mark, connect=None, resutype='DICT', autocommit=False):
     """
     :param markname:
     :return:the decorator with specific db connection
@@ -152,8 +151,12 @@ def withMongo(markname, connect=None, resutype='DICT', autocommit=False):
     def wrapped(fun):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
+            if hasattr(mark, '__call__'):
+                markname = mark()
+            else:
+                markname = mark
             if not dbpc._collection.has_key(markname):
-                raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection")
+                raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection" % markname)
             dbpc.connect(markname, connect=connect, resutype=resutype, autocommit=autocommit)
             try:
                 res = fun(*args, **kwargs)
@@ -168,18 +171,18 @@ def withMongo(markname, connect=None, resutype='DICT', autocommit=False):
         return wrapper
     return wrapped
 
-@withMongo(RDB, resutype='DICT')
+@withMongo(CFG.R, resutype='DICT')
 def withMongoCount(table, spec):
     return dbpc.handler.queryAll(spec, collection=table).count()
 
-@withMongo(RDB, resutype='DICT')
+@withMongo(CFG.R, resutype='DICT')
 def withMongoQuery(table, spec, projection=None, sort=[], skip=0, limit=10, qt='all'):
     if qt.lower() == 'all':
         return dbpc.handler.queryAll(spec, collection=table, projection=projection, sort=sort, skip=skip, limit=limit)
     else:
         return dbpc.handler.queryOne(spec, collection=table, projection=projection, sort=sort, skip=0, limit=1)
 
-@withMongo(WDB, autocommit=True)
+@withMongo(CFG.W, autocommit=True)
 def withMongoInsert(table, doc, keycol, update=True):
     flag = True
     if update:
@@ -193,11 +196,11 @@ def withMongoInsert(table, doc, keycol, update=True):
     elif update:
         dbpc.handler.update({'_id':record['_id']}, {'$set':doc}, collection=table)
 
-@withMongo(WDB, autocommit=True)
+@withMongo(CFG.W, autocommit=True)
 def withMongoDelete(table, spec):
     dbpc.handler.delete(spec, collection=table)
 
-@withMongo(WDB, autocommit=True)
+@withMongo(CFG.W, autocommit=True)
 def withMongoUpdate(table, spec, doc):
     for k in doc:
         if not k.startswith('$'):

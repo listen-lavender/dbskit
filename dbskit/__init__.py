@@ -6,8 +6,42 @@
 """
 
 __import__('pkg_resources').declare_namespace(__name__)
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 __author__ = 'hk'
+
+def parse(section):
+    config = {}
+    for key, val in section:
+        if val.isdigit():
+            config[key] = int(val)
+        elif val.lower() in ('true', 'false'):
+            config[key] = bool(val.lower())
+        else:
+            config[key] = val
+    return config
+
+def extract(config):
+    return {
+        "host": config["host"],
+        "port": config["port"],
+        "user": config["user"],
+        "passwd": config["passwd"],
+        "db": config["db"],
+        "charset": config["charset"],
+        "use_unicode": config["use_unicode"],
+    }
+
+class Enum(object):
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(**kwargs)
+
+    def __getattribute__(self, name):
+        if name.startswith('_'):
+            return object.__getattribute__(self, name)
+        def lazy_get():
+            return self.__dict__[name]
+        return lazy_get
 
 def singleton(cls):
     instances = {}
@@ -16,6 +50,7 @@ def singleton(cls):
             instances[cls] = cls(*args, **kwargs)
         return instances[cls]
     return _singleton
+
 
 class Field(object):
     _count = 0
