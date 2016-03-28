@@ -1,0 +1,16 @@
+language: python
+python:
+  - "2.7"
+
+# command to install dependencies
+install: 
+  - pip install mysql-connector-python
+  - pip install MySQL-python
+  - pip install pymongo
+  - pip install kokolog
+
+# command to run tests
+script: 
+  - python setup.py install
+  - cd dbskit/test
+  - python run.py
