@@ -10,6 +10,7 @@ class DBHandler(object):
         self._check = check
         self._resutype = {'TUPLE':'TUPLE', 'DICT':'DICT'}[resutype]
         self.db = db
+        self.bulk_cache = {}
 
     @classmethod
     def wrap(cls, tpl):
@@ -37,26 +38,73 @@ class DBHandler(object):
         else:
             return self._conn[db][collection].find(spec, **kwargs)
 
-    def update(self, spec, doc, db=None, collection=None, upsert=False, method='SINGLE'):
+    def update(self, spec, doc, batch=[], db=None, collection=None, upsert=False, method='SINGLE'):
         db = db or self.db
-        multi = not method.upper() == 'SINGLE'
-        return self._conn[db][collection].update(spec, doc, upsert=upsert, multi=multi)
+        if method.upper() == 'SINGLE':
+            if not isinstance(spec, dict) or not isinstance(doc, dict):
+                raise "Single update condition and document must be dict type."
+            self._conn[db][collection].update(spec, doc, upsert=upsert, multi=False)
+            rows = 1
+        else:
+            if not isinstance(batch, list):
+                raise "Bulk update condition and document must be list type."
+            bulk = self.bulk_cache(db, collection)
+            for spec, doc in batch:
+                buff = bulk.find(spec)
+                buff.update_one(doc)
+                if upsert:
+                    buff.upsert()
+            bulk.excute()
+            rows = len(batch)
+        return rows
 
     def delete(self, spec, db=None, collection=None, method='SINGLE'):
         db = db or self.db
-        multi = not method.upper() == 'SINGLE'
-        return self._conn[db][collection].remove(spec, multi=multi)
+        if method.upper() == 'SINGLE':
+            if not isinstance(spec, dict):
+                raise "Condition must be dict type."
+            rows = self._conn[db][collection].remove(spec)
+        else:
+            if not isinstance(spec, list):
+                raise "Bulk remove condition must be list type."
+            bulk = self.bulk_cache(db, collection)
+            for one in spec:
+                buff = bulk.find(one)
+                buff.remove()
+            bulk.excute()
+            rows = len(doc)
+        return rows
 
-    def insert(self, doc, db=None, collection=None, method='SINGLE', lastid=None):
+    def insert(self, doc, db=None, collection=None, method='SINGLE', update=False, lastid=None):
+        if update:
+            if method.upper() == 'SINGLE':
+                spec, doc = doc
+                return self.update(spec, doc, db=db, collection=collection, upsert=True, method='SINGLE')
+            else:
+                return self.update(doc, db=db, collection=collection, upsert=True, method='SINGLE')
         db = db or self.db
-        if method == 'SINGLE':
+        if method.upper() == 'SINGLE':
             if not isinstance(doc, dict):
                 raise "Single insert document must be dict type."
-            return self._conn[db][collection].insert_one(doc).inserted_id
+            lastid = self._conn[db][collection].insert_one(doc).inserted_id
         else:
             if not isinstance(doc, list):
                 raise "Bulk insert document must be list type."
-            return self._conn[db][collection].insert_many(doc).inserted_ids
+            try:
+                self._conn[db][collection].insert_many(doc, ordered=False)
+            except:
+                pass
+        return lastid
+
+    def orderedBulk(db, collection):
+        if db is None or collection is None:
+            raise "Db or collection is None."
+        key = '%s-%s-%s' % (self._markname, db, collection)
+        val = self.bulk_cache.get(key)
+        if val is None:
+            val = self._conn[db][collection].initialize_ordered_bulk_op()
+            self.bulk_cache[key] = val
+        return val
 
     def showColumns(self, table):
         """

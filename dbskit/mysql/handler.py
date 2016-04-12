@@ -59,7 +59,7 @@ class DBHandler(object):
             method = {'SINGLE':'SINGLE', 'MANY':'MANY'}[method]
         except:
             raise 'executing method error, you must choose SINGLE or MANY.'
-        if method == 'SINGLE':
+        if method.upper() == 'SINGLE':
             num = self._curs.execute(sql, data)
         else: # MANY
             num = self._curs.executemany(sql, data)
@@ -87,12 +87,12 @@ class DBHandler(object):
         return self.operate(sql, data, method=method)
 
     def insert(self, sql, data=None, method='SINGLE', lastid=None):
-        if lastid == 'CURS':
-            return (self.operate(sql, data, method=method), int(self._curs.lastrowid))
-        elif lastid == 'CONN':
-            return (self.operate(sql, data, method=method), int(self._conn.insert_id()))
+        if method.upper() == 'SINGLE':
+            self.operate(sql, data, method=method)
+            lastid = int(self._curs.lastrowid)
         else:
-            return self.operate(sql, data, method=method)
+            self.operate(sql, data, method=method)
+        return lastid
 
     def showColumns(self, table):
         """
