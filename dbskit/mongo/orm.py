@@ -246,8 +246,6 @@ class Model(dict):
         record = None
         if obj is not None and update:
             updatekeys = {}
-            if '_id' in obj:
-                del obj['_id']
             for k, v in obj.__mappings__.iteritems():
                 if v.unique:
                     updatekeys[k] = obj[k]
@@ -256,6 +254,8 @@ class Model(dict):
             if record and 'create_time' in record:
                 obj['create_time'] = record['create_time']
         if record:
+            if '_id' in obj:
+                del obj['_id']
             dbpc.handler.update(updatekeys, {"$set":obj}, collection=cls.__table__)
         else:
             if method == 'SINGLE':

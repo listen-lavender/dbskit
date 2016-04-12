@@ -284,8 +284,6 @@ class Model(dict):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         if obj is not None:
-            if '_id' in obj:
-                del obj['_id']
             updatekeys = []
             for k, v in obj.__mappings__.iteritems():
                 if not hasattr(obj, k):
@@ -303,6 +301,8 @@ class Model(dict):
 
             if cls._insertsql is None or method == 'SINGLE':
                 if update:
+                    if '_id' in obj:
+                        del obj['_id']
                     cls._insertsql = 'insert into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in updatekeys if not one == 'create_time')
                 else:
                     cls._insertsql = 'insert ignore into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items)
