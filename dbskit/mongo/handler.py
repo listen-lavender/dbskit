@@ -38,7 +38,7 @@ class DBHandler(object):
         else:
             return self._conn[db][collection].find(spec, **kwargs)
 
-    def update(self, spec, doc, batch=[], db=None, collection=None, upsert=False, method='SINGLE'):
+    def update(self, spec, doc, batch=None, db=None, collection=None, upsert=False, method='SINGLE'):
         db = db or self.db
         if method.upper() == 'SINGLE':
             if not isinstance(spec, dict) or not isinstance(doc, dict):
@@ -48,13 +48,14 @@ class DBHandler(object):
         else:
             if not isinstance(batch, list):
                 raise "Bulk update condition and document must be list type."
-            bulk = self.bulk_cache(db, collection)
+            bulk = self.orderedBulk(db, collection)
             for spec, doc in batch:
                 buff = bulk.find(spec)
-                buff.update_one(doc)
                 if upsert:
-                    buff.upsert()
-            bulk.excute()
+                    buff.upsert().update_one(doc)
+                else:
+                    buff.update_one(doc)
+            bulk.execute()
             rows = len(batch)
         return rows
 
@@ -79,9 +80,9 @@ class DBHandler(object):
         if update:
             if method.upper() == 'SINGLE':
                 spec, doc = doc
-                return self.update(spec, doc, db=db, collection=collection, upsert=True, method='SINGLE')
+                return self.update(spec, doc, db=db, collection=collection, upsert=True, method=method)
             else:
-                return self.update(doc, db=db, collection=collection, upsert=True, method='SINGLE')
+                return self.update(None, None, batch=doc, db=db, collection=collection, upsert=True, method=method)
         db = db or self.db
         if method.upper() == 'SINGLE':
             if not isinstance(doc, dict):
@@ -96,7 +97,7 @@ class DBHandler(object):
                 pass
         return lastid
 
-    def orderedBulk(db, collection):
+    def orderedBulk(self, db, collection):
         if db is None or collection is None:
             raise "Db or collection is None."
         key = '%s-%s-%s' % (self._markname, db, collection)

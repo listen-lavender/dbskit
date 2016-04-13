@@ -240,7 +240,7 @@ class Model(dict):
         return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=CFG._BUFFER):
+    def insert(cls, obj, update=True, method='SINGLE', maxsize=CFG._BUFFER):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         record = None
@@ -251,7 +251,7 @@ class Model(dict):
                     condition[k] = obj[k]
             if '_id' in obj:
                 del obj['_id']
-            obj = (condition, obj)
+            obj = (condition, {'$set':obj})
 
         if method == 'SINGLE':
             try:
@@ -266,26 +266,15 @@ class Model(dict):
             with cls.__lock:
                 if obj is not None:
                     cls._insertdatas.append(obj)
-                if forcexe:
+                if sys.getsizeof(cls._insertdatas) > maxsize:
                     try:
-                        if cls._insertdatas:
-                            dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method, update=update) #, bypass_document_validation=update)
-                            cls._insertdatas = []
+                        dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method, update=update) #, bypass_document_validation=update)
+                        cls._insertdatas = []
                     except:
                         t, v, b = sys.exc_info()
                         err_messages = traceback.format_exception(t, v, b)
                         txt = ','.join(err_messages)
                         _print('db ', tid=cls._insertdatas[0].get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
-                else:
-                    if sys.getsizeof(cls._insertdatas) > maxsize:
-                        try:
-                            dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method, update=update) #, bypass_document_validation=update)
-                            cls._insertdatas = []
-                        except:
-                            t, v, b = sys.exc_info()
-                            err_messages = traceback.format_exception(t, v, b)
-                            txt = ','.join(err_messages)
-                            _print('db ', tid=cls._insertdatas[0].get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
 
 
     @classmethod

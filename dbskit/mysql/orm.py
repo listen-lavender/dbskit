@@ -280,7 +280,7 @@ class Model(dict):
         return dbpc.handler.queryOne('select count(*) as total from `%s` %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])['total']
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', forcexe=False, maxsize=CFG._BUFFER):
+    def insert(cls, obj, update=True, method='SINGLE', maxsize=CFG._BUFFER):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         if obj is not None:
@@ -325,30 +325,17 @@ class Model(dict):
             with cls.__lock:
                 if one is not None:
                     cls._insertdatas.append(one)
-                if forcexe:
+                if sys.getsizeof(cls._insertdatas) > maxsize:
                     try:
-                        if cls._insertdatas:
-                            dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
-                            dbpc.handler.commit()
-                            cls._insertdatas = []
+                        dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
+                        dbpc.handler.commit()
+                        cls._insertdatas = []
                     except:
                         t, v, b = sys.exc_info()
                         err_messages = traceback.format_exception(t, v, b)
                         txt = ','.join(err_messages)
                         _print('db ', tid=cls._insertdatas[0][-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                         dbpc.handler.rollback()
-                else:
-                    if sys.getsizeof(cls._insertdatas) > maxsize:
-                        try:
-                            dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
-                            dbpc.handler.commit()
-                            cls._insertdatas = []
-                        except:
-                            t, v, b = sys.exc_info()
-                            err_messages = traceback.format_exception(t, v, b)
-                            txt = ','.join(err_messages)
-                            _print('db ', tid=cls._insertdatas[0][-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
-                            dbpc.handler.rollback()
 
     @classmethod
     def delete(cls, spec):
@@ -364,8 +351,9 @@ class Model(dict):
     def update(cls, spec, doc):
         if spec == {}:
             raise Exception("Wrong update spec.")
-        if not '$set' in doc and not '$inc' in doc:
-            raise Exception("Wrong update doc.")
+        for k in doc:
+            if not k in ('$set', '$inc'):
+                raise Exception("Wrong update doc, only assist $set and $inc.")
         sets = doc.get('$set', {}).items()
         if sets:
             resets = [','.join('`'+one[0]+'`=%s' for one in sets)]

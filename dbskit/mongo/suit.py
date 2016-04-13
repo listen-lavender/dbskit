@@ -184,17 +184,15 @@ def withMongoQuery(table, spec, projection=None, sort=[], skip=0, limit=10, qt='
 
 @withMongo(CFG.W, autocommit=True)
 def withMongoInsert(table, doc, keycol, update=True):
-    flag = True
-    if update:
+    if update and keycol:
         condition = {}
         for kc in keycol:
             condition[kc] = doc[kc]
-        record = dbpc.handler.queryOne(condition, collection=table)
-        flag = record is None
-    if flag:
+        if '_id' in doc:
+            del doc['_id']
+        return dbpc.handler.update(spec, {'$set':doc}, collection=table, upsert=True)
+    else:
         return dbpc.handler.insert(doc, collection=table)
-    elif update:
-        dbpc.handler.update({'_id':record['_id']}, {'$set':doc}, collection=table)
 
 @withMongo(CFG.W, autocommit=True)
 def withMongoDelete(table, spec):
@@ -205,7 +203,7 @@ def withMongoUpdate(table, spec, doc):
     for k in doc:
         if not k.startswith('$'):
             raise Exception("Wrong update doc.")
-    dbpc.handler.update(spec, doc, collection=table)
+    dbpc.handler.update(spec, doc, collection=table, upsert=False)
 
 if __name__ == "__main__":
 

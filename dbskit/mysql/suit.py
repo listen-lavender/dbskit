@@ -318,8 +318,9 @@ def withMysqlDelete(table, spec):
 def withMysqlUpdate(table, spec, doc):
     if spec == {}:
         raise Exception("Wrong update spec.")
-    if not '$set' in doc and not '$inc' in doc:
-        raise Exception("Wrong update doc.")
+    for k in doc:
+        if not k in ('$set', '$inc'):
+            raise Exception("Wrong update doc, only assist $set and $inc.")
     sets = doc.get('$set', {}).items()
     if sets:
         resets = [','.join('`'+one[0]+'`=%s' for one in sets)]
