@@ -261,7 +261,12 @@ class Model(dict):
                 t, v, b = sys.exc_info()
                 err_messages = traceback.format_exception(t, v, b)
                 txt = ','.join(err_messages)
-                _print('db ', tid=obj.get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+                if 'tid' in cls.__mappings__:
+                    if isinstance(obj, dict):
+                        tid = obj['tid']
+                    else:
+                        tid = obj[-1]['$set']['tid']
+                    _print('db ', tid=tid, sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
         else:
             with cls.__lock:
                 if obj is not None:
@@ -274,7 +279,13 @@ class Model(dict):
                         t, v, b = sys.exc_info()
                         err_messages = traceback.format_exception(t, v, b)
                         txt = ','.join(err_messages)
-                        _print('db ', tid=cls._insertdatas[0].get('tid'), sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+                        if 'tid' in cls.__mappings__:
+                            for one in cls._insertdatas:
+                                if isinstance(cls._insertdatas[0], dict):
+                                    tid = cls._insertdatas[0]['tid']
+                                else:
+                                    tid = cls._insertdatas[0][-1]['$set']['tid']
+                                _print('db ', tid=tid, sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
 
 
     @classmethod

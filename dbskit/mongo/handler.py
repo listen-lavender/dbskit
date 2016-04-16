@@ -10,7 +10,6 @@ class DBHandler(object):
         self._check = check
         self._resutype = {'TUPLE':'TUPLE', 'DICT':'DICT'}[resutype]
         self.db = db
-        self.bulk_cache = {}
 
     @classmethod
     def wrap(cls, tpl):
@@ -48,7 +47,7 @@ class DBHandler(object):
         else:
             if not isinstance(batch, list):
                 raise "Bulk update condition and document must be list type."
-            bulk = self.orderedBulk(db, collection)
+            bulk = self._conn[db][collection].initialize_ordered_bulk_op()
             for spec, doc in batch:
                 buff = bulk.find(spec)
                 if upsert:
@@ -56,6 +55,7 @@ class DBHandler(object):
                 else:
                     buff.update_one(doc)
             bulk.execute()
+            del bulk
             rows = len(batch)
         return rows
 
@@ -68,11 +68,12 @@ class DBHandler(object):
         else:
             if not isinstance(spec, list):
                 raise "Bulk remove condition must be list type."
-            bulk = self.bulk_cache(db, collection)
+            bulk = self._conn[db][collection].initialize_ordered_bulk_op()
             for one in spec:
                 buff = bulk.find(one)
                 buff.remove()
             bulk.excute()
+            del bulk
             rows = len(doc)
         return rows
 
@@ -98,6 +99,7 @@ class DBHandler(object):
         return lastid
 
     def orderedBulk(self, db, collection):
+        self.bulk_cache = {}
         if db is None or collection is None:
             raise "Db or collection is None."
         key = '%s-%s-%s' % (self._markname, db, collection)

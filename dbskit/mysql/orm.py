@@ -319,7 +319,8 @@ class Model(dict):
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
                     txt = ','.join(err_messages)
-                    _print('db ', tid=one[-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+                    if 'tid' in cls.__mappings__:
+                        _print('db ', tid=one[-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                     dbpc.handler.rollback()
         else:
             with cls.__lock:
@@ -334,7 +335,9 @@ class Model(dict):
                         t, v, b = sys.exc_info()
                         err_messages = traceback.format_exception(t, v, b)
                         txt = ','.join(err_messages)
-                        _print('db ', tid=cls._insertdatas[0][-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+                        if 'tid' in cls.__mappings__:
+                            for one in cls._insertdatas:
+                                _print('db ', tid=one[-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
                         dbpc.handler.rollback()
 
     @classmethod
