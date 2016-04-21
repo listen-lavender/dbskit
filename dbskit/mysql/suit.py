@@ -5,7 +5,7 @@ import time
 import functools
 import threading
 try:
-    from webcrawl import queue
+    from webcrawl.queue.lib import queue
 except:
     import Queue as queue
 threading.queue = queue

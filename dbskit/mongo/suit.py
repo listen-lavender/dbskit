@@ -4,11 +4,6 @@
 import time
 import functools
 import threading
-try:
-    from webcrawl import queue
-except:
-    import Queue as queue
-threading.queue = queue
 import weakref
 import traceback
 import sys
