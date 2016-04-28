@@ -47,7 +47,7 @@ class DBHandler(object):
         self._curs.close()
         del self._conn, self._curs
 
-    def operate(self, sql, data, method='SINGLE'):
+    def operate(self, sql, data=None, method='SINGLE'):
         """
             操作数据
             @param sql:

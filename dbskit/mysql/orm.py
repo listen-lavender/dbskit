@@ -31,7 +31,7 @@ class IdField(Field):
     def __init__(self, strict=False, **attributes):
         if not strict and not 'default' in attributes:
             attributes['default'] = 0
-        attributes['ddl'] = '%s(%d)' % ('int', 11)
+        attributes['ddl'] = '%s(%d) not null auto_increment' % ('int', 11)
         attributes['pyt'] = int
         super(IdField, self).__init__(**attributes)
 
@@ -131,11 +131,13 @@ class DatetimeField(Field):
 
 _triggers = frozenset(['pre_insert', 'pre_update', 'pre_delete'])
 
-def genDoc(tablename, tablefields):
+def genDoc(cls):
+    tablename = cls.__table__
+    tablefields = cls.__mappings__
     pk = None
     uniques = {}
     doc = ['-- generating DOC for %s:' % tablename, 'create table if not exists `%s` (' % tablename]
-    doc.append('`id` int(11) not null auto_increment,')
+
     for f in sorted(tablefields.values(), lambda x, y: cmp(x.order, y.order)):
         if not hasattr(f, 'ddl'):
             raise StandardError('no ddl in field "%s".' % n)
@@ -147,11 +149,12 @@ def genDoc(tablename, tablefields):
             else:
                 uniques[f.unique] = [f.name]
         doc.append(nullable and '  `%s` %s,' % (f.name, ddl) or '  `%s` %s not null default %s,' % (f.name, ddl, f.default))
+
     if uniques:
-        doc.append('  primary key (`id`),')
+        doc.append('  primary key (`%s`),' % cls.id_name)
         doc.append(',\n'.join('  unique key `%s` (%s)' % (key, ','.join('`'+one+'`' for one in val)) for key, val in uniques.items()))
     else:
-        doc.append('  primary key (`id`)')
+        doc.append('  primary key (`%s`)' % cls.id_name)
     doc.append(');')
     return '\n'.join(doc)
 
@@ -173,20 +176,29 @@ class ModelMetaclass(type):
         if not name in cls.subclasses:
             cls.subclasses[name] = name
         else:
-            logging.warning('Redefine class: %s' % name)
+            pass
 
-        logging.info('Scan ORMapping %s...' % name)
         mappings = dict()
+        has_id = False
+        cls.id_name = 'id'
         for k, v in attrs.iteritems():
             if isinstance(v, Field):
                 if not v.name:
                     v.name = k
-                logging.info('Found mapping: %s => %s' % (k, v))
                 mappings[k] = v
+            if isinstance(v, IdField):
+                has_id = True
+                cls.id_name = v.name
+
+        if not has_id:
+            attrs[cls.id_name] = IdField()
+            attrs[cls.id_name].name = cls.id_name
+            mappings[cls.id_name] = attrs[cls.id_name]
+
         for k in mappings.iterkeys():
             attrs.pop(k)
         attrs['__mappings__'] = mappings
-        cls.genDoc = lambda self: genDoc(attrs['__table__'], mappings)
+        cls.genDoc = lambda cls:genDoc(cls)
         return type.__new__(cls, name, bases, attrs)
 
 
@@ -286,7 +298,7 @@ class Model(dict):
         if obj is not None:
             updatekeys = []
             for k, v in obj.__mappings__.iteritems():
-                if not hasattr(obj, k):
+                if not hasattr(obj, k) and not isinstance(v, IdField):
                     setattr(obj, k, v.default)
                 if update:
                     if v.updatable:
@@ -312,9 +324,10 @@ class Model(dict):
         if method == 'SINGLE':
             if one:
                 try:
-                    dbpc.handler.insert(cls._insertsql, one, method)
+                    _id = dbpc.handler.insert(cls._insertsql, one, method)
                     dbpc.handler.commit()
-                    return dbpc.handler.queryOne(""" select last_insert_id() as lastid; """)['lastid']
+                    return obj.get(cls.id_name, _id)
+                    # return 
                 except:
                     t, v, b = sys.exc_info()
                     err_messages = traceback.format_exception(t, v, b)
@@ -371,6 +384,11 @@ class Model(dict):
         rectify(cls, IdField, 'IdField', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)])
+
+    @classmethod
+    def init_table(cls):
+        doc = cls.genDoc()
+        dbpc.handler.operate(doc)
 
 
 if __name__=='__main__':
