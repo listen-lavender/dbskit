@@ -44,7 +44,11 @@ class DBHandler(object):
         self.db = db
 
     def __del__(self):
-        self._curs.close()
+        try:
+            self._curs.close()
+        except:
+            self._conn.unread_result = False
+            self._curs.close()
         del self._conn, self._curs
 
     def operate(self, sql, data=None, method='SINGLE'):

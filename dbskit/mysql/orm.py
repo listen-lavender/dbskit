@@ -228,7 +228,7 @@ class Model(dict):
         return self.__dict__
 
     @classmethod
-    def queryOne(cls, spec, projection={}, sort=[]):
+    def queryOne(cls, spec, projection={}, sort=[], update=False):
         '''
         Find by where clause and return one result. If multiple results found, 
         only the first one returned. If no result found, return None.
@@ -248,13 +248,17 @@ class Model(dict):
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
+        if update:
+            update = 'for update'
+        else:
+            update = ''
         if where:
             where = 'where %s' % where
-        d = dbpc.handler.queryOne('select %s from `%s` %s %s limit %d, %d' % (projection, cls.__table__, where, sort, 0, 1), [args[index][one] for index, one in enumerate(keys)])
+        d = dbpc.handler.queryOne('select %s from `%s` %s %s limit %d, %d %s' % (projection, cls.__table__, where, sort, 0, 1, update), [args[index][one] for index, one in enumerate(keys)])
         return d
 
     @classmethod
-    def queryAll(cls, spec, projection={}, sort=[], skip=0, limit=10):
+    def queryAll(cls, spec, projection={}, sort=[], skip=0, limit=None, update=False):
         '''
         Find all and return list.
         '''
@@ -273,9 +277,16 @@ class Model(dict):
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
         else:
             sort = ''
+        if update:
+            update = 'for update'
+        else:
+            update = ''
         if where:
             where = 'where %s' % where
-        L = dbpc.handler.queryAll('select %s from `%s` %s %s limit %d, %d' % (projection, cls.__table__, where, sort, skip, limit), [args[index][one] for index, one in enumerate(keys)])
+        if limit is None:
+            L = dbpc.handler.queryAll('select %s from `%s` %s %s %s' % (projection, cls.__table__, where, sort, update), [args[index][one] for index, one in enumerate(keys)])
+        else:
+            L = dbpc.handler.queryAll('select %s from `%s` %s %s limit %d, %d %s' % (projection, cls.__table__, where, sort, skip, limit, update), [args[index][one] for index, one in enumerate(keys)])
         return L
 
     @classmethod
