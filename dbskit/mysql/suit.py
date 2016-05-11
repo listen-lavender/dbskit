@@ -242,17 +242,17 @@ def withMysql(mark, resutype='TUPLE', autocommit=False):
                 markname = mark
             if not dbpc._collection.has_key(markname):
                 raise ConnectionNotFoundError("Not found connection for '%s', use dbpc.addDB add the connection" % markname)
+            e = None
             if dbpc.handler is None:
                 dbpc.connect(markname, resutype=resutype, autocommit=autocommit)
             try:
                 res = fun(*args, **kwargs)
-            except:
-                t, v, b = sys.exc_info()
-                err_messages = traceback.format_exception(t, v, b)
-                print ('Business error: %s' % ','.join(err_messages))
-                res = None
+            except Exception, e:
+                pass
             finally:
                 dbpc.release()
+            if e is not None:
+                raise e
             return res
         return wrapper
     return wrapped
