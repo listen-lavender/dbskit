@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 from dbskit.mysql import transfer
 from dbskit.mysql.orm import *

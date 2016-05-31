@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 from dbskit.mongo.orm import *
 from dbskit.mongo.suit import dbpc, withMongo
