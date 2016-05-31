@@ -157,7 +157,7 @@ def withMongo(mark, connect=None, resutype='DICT', autocommit=False):
             try:
                 res = fun(*args, **kwargs)
             except:
-                pass
+                res = None
             finally:
                 dbpc.release()
             if e is not None:

@@ -240,13 +240,13 @@ class Model(dict):
         return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
-    def insert(cls, obj, update=True, method='SINGLE', maxsize=CFG._BUFFER):
+    def insert(cls, obj, update=False, method='SINGLE', maxsize=CFG._BUFFER):
         if cls.__lock is None:
             cls.__lock = threading.Lock()
         record = None
         if obj is not None and update:
             condition = {}
-            for k, v in obj.__mappings__.iteritems():
+            for k, v in cls.__mappings__.iteritems():
                 if v.unique:
                     condition[k] = obj[k]
             if '_id' in obj:
