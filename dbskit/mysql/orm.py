@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # coding=utf-8
 import time, datetime, logging, threading, sys, traceback, hashlib
 from suit import dbpc
