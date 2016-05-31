@@ -248,7 +248,7 @@ def withMysql(mark, resutype='TUPLE', autocommit=False):
             try:
                 res = fun(*args, **kwargs)
             except Exception, e:
-                pass
+                res = None
             finally:
                 dbpc.release()
             if e is not None:

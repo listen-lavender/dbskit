@@ -308,7 +308,7 @@ class Model(dict):
             cls.__lock = threading.Lock()
         if obj is not None:
             updatekeys = []
-            for k, v in obj.__mappings__.iteritems():
+            for k, v in cls.__mappings__.iteritems():
                 if not hasattr(obj, k) and not isinstance(v, IdField):
                     setattr(obj, k, v.default)
                 if update:
