@@ -66,6 +66,7 @@ class Field(object):
         self.deleteable = attributes.get('deleteable', True)
         self.updatable = attributes.get('updatable', True)
         self.queryable = attributes.get('queryable', True)
+        self.searchable = attributes.get('searchable', None) # equal in head tail
         Field._count += 1
         self.order = Field._count
 

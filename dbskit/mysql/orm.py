@@ -179,6 +179,7 @@ class ModelMetaclass(type):
             pass
 
         mappings = dict()
+        search = []
         has_id = False
         cls.id_name = 'id'
         for k, v in attrs.iteritems():
@@ -186,6 +187,8 @@ class ModelMetaclass(type):
                 if not v.name:
                     v.name = k
                 mappings[k] = v
+                if v.searchable:
+                    search.append({k:v.searchable})
             if isinstance(v, IdField):
                 has_id = True
                 cls.id_name = v.name
@@ -198,6 +201,7 @@ class ModelMetaclass(type):
         for k in mappings.iterkeys():
             attrs.pop(k)
         attrs['__mappings__'] = mappings
+        attrs['__search__'] = search
         cls.genDoc = lambda cls:genDoc(cls)
         return type.__new__(cls, name, bases, attrs)
 

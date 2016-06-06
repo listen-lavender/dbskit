@@ -174,15 +174,19 @@ class ModelMetaclass(type):
 
         logging.info('Scan ORMapping %s...' % name)
         mappings = dict()
+        search = []
         for k, v in attrs.iteritems():
             if isinstance(v, Field):
                 if not v.name:
                     v.name = k
                 logging.info('Found mapping: %s => %s' % (k, v))
                 mappings[k] = v
+                if v.searchable:
+                    search.append({k:v.searchable})
         for k in mappings.iterkeys():
             attrs.pop(k)
         attrs['__mappings__'] = mappings
+        attrs['__search__'] = search
         cls.genDoc = lambda self: genDoc(attrs['__table__'], mappings)
         return type.__new__(cls, name, bases, attrs)
 
