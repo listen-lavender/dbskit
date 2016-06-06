@@ -179,7 +179,7 @@ class ModelMetaclass(type):
             pass
 
         mappings = dict()
-        search = []
+        search = {}
         has_id = False
         cls.id_name = 'id'
         for k, v in attrs.iteritems():
@@ -188,7 +188,7 @@ class ModelMetaclass(type):
                     v.name = k
                 mappings[k] = v
                 if v.searchable:
-                    search.append({k:v.searchable})
+                    search[k] = v.searchable
             if isinstance(v, IdField):
                 has_id = True
                 cls.id_name = v.name

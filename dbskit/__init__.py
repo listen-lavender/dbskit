@@ -9,6 +9,22 @@ __import__('pkg_resources').declare_namespace(__name__)
 __version__ = '0.0.1'
 __author__ = 'hk'
 
+def pack(cls, keyword, condition):
+    term = []
+    for key, val in cls.__search__.items():
+        if val == 'all':
+            term.append({key:keyword})
+        elif val == 'start':
+            term.append({key:{'$regex':'^' + keyword}})
+        elif val == 'end':
+            term.append({key:{'$regex':keyword + '$'}})
+        elif val == 'in':
+            term.append({key:{'$regex':keyword}})
+        else:
+            pass
+    condition['$or'] = term
+    return condition
+
 def parse(section):
     config = {}
     for key, val in section:

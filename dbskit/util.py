@@ -12,6 +12,7 @@ def explain(desc):
         '$or':' or ',
         '$and':' and ',
         '':' and ',
+        '$regex': ' like ',
         '$mod':' mod ',
     }
     return d.get(desc)
@@ -46,6 +47,8 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
             elif isinstance(v, list):
                 multi.append(transfer(v, grand=parent, parent=k, index=index, condition=condition))
             else:
+                if k == '$options':
+                    continue
                 operator = explain(k)
                 if operator is not None:
                     k = parent
@@ -58,6 +61,13 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
                     # multi.append('("" = "")')
                 else:
                     index.append(k)
+                    if ' like ' == operator:
+                        if v.startswith('^'):
+                            v = v[1:] + '%'
+                        elif v.endswith('$'):
+                            v = '%' + v[:-1]
+                        else:
+                            v = '%' + v + '%'
                     condition.append({k:v})
                     multi.append('(`' + k + '`' + operator + '%s' + ')')
         return '(' + ' and '.join(multi) + ')' if multi else ''
@@ -105,7 +115,7 @@ def rectify(cls, idfield, field, spec={}, grand=None, parent=''):
 
 if __name__ == '__main__':
     spec = {'username':'haokuan@adesk.com', 'password':'123456', 'status':{'$ne':0}}
-    spec = {'$or':[{'uid':''}, {'':''}]}
+    spec = {'$or':[{'uid':{'$regex':'a$', '$options':'i'}}, {'a':''}]}
     index = []
     condition = []
     print transfer(spec, grand=None, parent='', index=index, condition=condition)

@@ -174,7 +174,7 @@ class ModelMetaclass(type):
 
         logging.info('Scan ORMapping %s...' % name)
         mappings = dict()
-        search = []
+        search = {}
         for k, v in attrs.iteritems():
             if isinstance(v, Field):
                 if not v.name:
@@ -182,7 +182,7 @@ class ModelMetaclass(type):
                 logging.info('Found mapping: %s => %s' % (k, v))
                 mappings[k] = v
                 if v.searchable:
-                    search.append({k:v.searchable})
+                    search[k] = v.searchable
         for k in mappings.iterkeys():
             attrs.pop(k)
         attrs['__mappings__'] = mappings
