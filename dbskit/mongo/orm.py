@@ -99,6 +99,14 @@ class BoolField(Field):
         attributes['pyt'] = bool
         super(BoolField, self).__init__(**attributes)
 
+class TextField(Field):
+
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
+            attributes['default'] = ''
+        attributes['ddl'] = 'str'
+        attributes['pyt'] = str
+        super(TextField, self).__init__(**attributes)
 
 class DatetimeField(Field):
 
@@ -250,12 +258,25 @@ class Model(dict):
         record = None
         if obj is not None and update:
             condition = {}
+            doc = {}
+            doc_set = {}
+            doc_push = {}
             for k, v in cls.__mappings__.iteritems():
+                if not hasattr(obj, k) and not isinstance(v, IdField):
+                    setattr(obj, k, v.default)
                 if v.unique:
                     condition[k] = obj[k]
-            if '_id' in obj:
-                del obj['_id']
-            obj = (condition, {'$set':obj})
+                if isinstance(v, ListField):
+                    doc_push[k] = obj[k]
+                elif k == '_id':
+                    pass
+                else:
+                    doc_set[k] = obj[k]
+            if doc_set:
+                doc['$set'] = doc_set
+            if doc_push:
+                doc['$pushAll'] = doc_push
+            obj = (condition, doc)
 
         if method == 'SINGLE':
             try:

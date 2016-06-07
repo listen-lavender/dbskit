@@ -128,6 +128,27 @@ class DatetimeField(Field):
         attributes['pyt'] = datetime.datetime
         super(DatetimeField, self).__init__(**attributes)
 
+class ListField(Field):
+
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
+            attributes['default'] = []
+        if not 'ddl' in attributes:
+            attributes['ddl'] = 'list'
+        attributes['pyt'] = list
+        super(ListField, self).__init__(**attributes)
+
+
+class DictField(Field):
+
+    def __init__(self, strict=False, **attributes):
+        if not strict and not 'default' in attributes:
+            attributes['default'] = {}
+        if not 'ddl' in attributes:
+            attributes['ddl'] = 'dict'
+        attributes['pyt'] = dict
+        super(DictField, self).__init__(**attributes)
+
 
 _triggers = frozenset(['pre_insert', 'pre_update', 'pre_delete'])
 
