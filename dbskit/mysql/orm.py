@@ -210,7 +210,7 @@ class ModelMetaclass(type):
                 mappings[k] = v
                 if v.searchable:
                     search[k] = v.searchable
-            if isinstance(v, IdField):
+            if isinstance(v, IdField) and v.primary:
                 has_id = True
                 cls.id_name = v.name
 

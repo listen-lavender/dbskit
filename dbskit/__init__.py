@@ -77,6 +77,7 @@ class Field(object):
         self.default = attributes.get('default')
         self.comment = attributes.get('comment')
         self.nullable = attributes.get('nullable', 1)
+        self.primary = attributes.get('primary', False)
         self.unique = attributes.get('unique')
         self.insertable = attributes.get('insertable', True)
         self.deleteable = attributes.get('deleteable', True)
