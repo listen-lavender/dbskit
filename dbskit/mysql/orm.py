@@ -8,23 +8,6 @@ from .. import Field
 
 ORDER = {1:'asc', -1:'desc'}
 
-try:
-    from kokolog.aboutfile import modulename, modulepath
-    from kokolog.prettyprint import logprint
-except:
-    def modulename(n):
-        return None
-
-    def modulepath(p):
-        return None
-
-    def logprint(n, p):
-        def _wraper(*args, **kwargs):
-            print(' '.join(args))
-        return _wraper, None
-
-_print, logger = logprint(modulename(__file__), modulepath(__file__))
-
 
 class IdField(Field):
 
@@ -363,14 +346,9 @@ class Model(dict):
                     _id = dbpc.handler.insert(cls._insertsql, one, method)
                     dbpc.handler.commit()
                     return obj.get(cls.id_name, _id)
-                    # return 
-                except:
-                    t, v, b = sys.exc_info()
-                    err_messages = traceback.format_exception(t, v, b)
-                    txt = ','.join(err_messages)
-                    if 'tid' in cls.__mappings__:
-                        _print('db ', tid=one[-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+                except Exception, e:
                     dbpc.handler.rollback()
+                    raise e
         else:
             with cls.__lock:
                 if one is not None:
@@ -379,15 +357,11 @@ class Model(dict):
                     try:
                         dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
                         dbpc.handler.commit()
-                        cls._insertdatas = []
-                    except:
-                        t, v, b = sys.exc_info()
-                        err_messages = traceback.format_exception(t, v, b)
-                        txt = ','.join(err_messages)
-                        if 'tid' in cls.__mappings__:
-                            for one in cls._insertdatas:
-                                _print('db ', tid=one[-1], sid=None, type='COMPLETED', status=0, sname='mysql-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+                    except Exception, e:
                         dbpc.handler.rollback()
+                        raise e
+                    finally:
+                        cls._insertdatas = []
 
     @classmethod
     def delete(cls, spec):

@@ -111,9 +111,6 @@ class DBHandler(object):
 
     def showColumns(self, table):
         """
-            查看表的列
-            @param table: 表名称
-            @return columns: 列名
         """
         sql = """ select `column_name`, `data_type`
                     from information_schema.columns

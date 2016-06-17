@@ -7,23 +7,6 @@ from . import CFG
 from ..util import rectify
 from .. import Field
 
-try:
-    from kokolog.aboutfile import modulename, modulepath
-    from kokolog.prettyprint import logprint
-except:
-    def modulename(n):
-        return None
-
-    def modulepath(p):
-        return None
-
-    def logprint(n, p):
-        def _wraper(*args, **kwargs):
-            print(' '.join(args))
-        return _wraper, None
-
-_print, logger = logprint(modulename(__file__), modulepath(__file__))
-
 
 class IdField(Field):
 
@@ -279,19 +262,8 @@ class Model(dict):
             obj = (condition, doc)
 
         if method == 'SINGLE':
-            try:
-                if obj:
-                    return dbpc.handler.insert(obj, collection=cls.__table__, method=method, update=update) #, bypass_document_validation=update)
-            except:
-                t, v, b = sys.exc_info()
-                err_messages = traceback.format_exception(t, v, b)
-                txt = ','.join(err_messages)
-                if 'tid' in cls.__mappings__:
-                    if isinstance(obj, dict):
-                        tid = obj['tid']
-                    else:
-                        tid = obj[-1]['$set']['tid']
-                    _print('db ', tid=tid, sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
+            if obj:
+                return dbpc.handler.insert(obj, collection=cls.__table__, method=method, update=update) #, bypass_document_validation=update)
         else:
             with cls.__lock:
                 if obj is not None:
@@ -299,19 +271,10 @@ class Model(dict):
                 if sys.getsizeof(cls._insertdatas) > maxsize:
                     try:
                         dbpc.handler.insert(cls._insertdatas, collection=cls.__table__, method=method, update=update) #, bypass_document_validation=update)
+                    except Exception, e:
+                        raise e
+                    finally:
                         cls._insertdatas = []
-                    except:
-                        t, v, b = sys.exc_info()
-                        err_messages = traceback.format_exception(t, v, b)
-                        txt = ','.join(err_messages)
-                        if 'tid' in cls.__mappings__:
-                            for one in cls._insertdatas:
-                                if isinstance(cls._insertdatas[0], dict):
-                                    tid = cls._insertdatas[0]['tid']
-                                else:
-                                    tid = cls._insertdatas[0][-1]['$set']['tid']
-                                _print('db ', tid=tid, sid=None, type='COMPLETED', status=0, sname='mongo-insert', priority=0, times=0, args='', kwargs='', txt=txt)
-
 
     @classmethod
     def delete(cls, spec):
