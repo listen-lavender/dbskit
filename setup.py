@@ -13,10 +13,8 @@ README = open(os.path.join(here, 'README.rst')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 install_requires = [
-    'mysql-connector-python==1.2.3',
     'MySQL-python==1.2.5',
     'pymongo>=3.0.3',
-    'kokolog',
     ]
 
 dbskit = __import__('dbskit')

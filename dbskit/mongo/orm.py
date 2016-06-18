@@ -253,7 +253,7 @@ class Model(dict):
                 if v.unique:
                     condition[k] = obj[k]
                 if isinstance(v, ListField):
-                    doc_push[k] = obj[k]
+                    doc_push[k] = {'$each':obj[k]}
                 elif k == '_id':
                     pass
                 else:
@@ -261,7 +261,7 @@ class Model(dict):
             if doc_set:
                 doc['$set'] = doc_set
             if doc_push:
-                doc['$pushAll'] = doc_push
+                doc['$addToSet'] = doc_push
             obj = (condition, doc)
 
         if method == 'SINGLE':
