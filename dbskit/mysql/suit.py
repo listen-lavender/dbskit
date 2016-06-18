@@ -246,8 +246,8 @@ def withMysql(mark, resutype='TUPLE', autocommit=False):
                 dbpc.connect(markname, resutype=resutype, autocommit=autocommit)
             try:
                 res = fun(*args, **kwargs)
-            except Exception, e:
-                raise e
+            except:
+                raise
             finally:
                 dbpc.release()
             return res

@@ -218,12 +218,15 @@ class Model(dict):
         return d
 
     @classmethod
-    def queryAll(cls, spec, projection=None, sort=[], skip=0, limit=10):
+    def queryAll(cls, spec, projection=None, sort=[], skip=0, limit=None):
         '''
         Find all and return list.
         '''
         rectify(cls, IdField, 'IdField', spec)
-        L = dbpc.handler.queryAll(spec, collection=cls.__table__, projection=projection, sort=sort, skip=skip, limit=limit)
+        if limit is None:
+            L = dbpc.handler.queryAll(spec, collection=cls.__table__, projection=projection, sort=sort)
+        else:
+            L = dbpc.handler.queryAll(spec, collection=cls.__table__, projection=projection, sort=sort, skip=skip, limit=limit)
         return L
 
     @classmethod
