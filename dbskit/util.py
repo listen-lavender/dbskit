@@ -86,10 +86,10 @@ def rectify(cls, idfield, field, spec={}, grand=None, parent=''):
             else:
                 if one is None:
                     continue
-                if grand == '_id':
-                    spec[index] = idfield.verify(one)
-                elif field in str(cls.__mappings__.get(grand)):
+                if field in str(cls.__mappings__.get(grand)):
                     spec[index] = cls.__mappings__[grand].verify(one)
+                elif grand == '_id':
+                    spec[index] = idfield.verify(one)
 
     elif isinstance(spec, dict):
         for k, v in spec.items():
@@ -105,10 +105,10 @@ def rectify(cls, idfield, field, spec={}, grand=None, parent=''):
                     f = k
                 if v is None:
                     continue
-                if f == '_id':
-                    spec[k] = idfield.verify(spec[k])
-                elif field in str(cls.__mappings__.get(f)):
+                if field in str(cls.__mappings__.get(f)):
                     spec[k] = cls.__mappings__[f].verify(spec[k])
+                elif f == '_id':
+                    spec[k] = idfield.verify(spec[k])
     else:
         pass
 
