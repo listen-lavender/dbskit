@@ -75,28 +75,26 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
         return ''
 
 
-def rectify(cls, idfield, field, spec={}, grand=None, parent=''):
+def rectify(cls, field, spec={}, grand=None, parent=''):
     """
         递归检查类型
     """
     if isinstance(spec, list):
         for index, one in enumerate(spec):
             if isinstance(one, dict):
-                rectify(cls, idfield, field, one, grand=parent, parent='')
+                rectify(cls, field, one, grand=parent, parent='')
             else:
                 if one is None:
                     continue
-                if field in str(cls.__mappings__.get(grand)):
+                if grand in cls.__mappings__:
                     spec[index] = cls.__mappings__[grand].verify(one)
-                elif grand == '_id':
-                    spec[index] = idfield.verify(one)
 
     elif isinstance(spec, dict):
         for k, v in spec.items():
             if isinstance(v, dict):
-                rectify(cls, idfield, field, v, grand=parent, parent=k)
+                rectify(cls, field, v, grand=parent, parent=k)
             elif isinstance(v, list):
-                rectify(cls, idfield, field, v, grand=parent, parent=k)
+                rectify(cls, field, v, grand=parent, parent=k)
             else:
                 operator = explain(k)
                 if operator is not None:
@@ -105,10 +103,8 @@ def rectify(cls, idfield, field, spec={}, grand=None, parent=''):
                     f = k
                 if v is None:
                     continue
-                if field in str(cls.__mappings__.get(f)):
+                if f in cls.__mappings__:
                     spec[k] = cls.__mappings__[f].verify(spec[k])
-                elif f == '_id':
-                    spec[k] = idfield.verify(spec[k])
     else:
         pass
 

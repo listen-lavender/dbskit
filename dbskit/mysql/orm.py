@@ -155,10 +155,10 @@ def genDoc(cls):
         doc.append(nullable and '  `%s` %s,' % (f.name, ddl) or '  `%s` %s not null default %s,' % (f.name, ddl, f.default))
 
     if uniques:
-        doc.append('  primary key (`%s`),' % cls.id_name)
+        doc.append('  primary key (`%s`),' % 'id' if cls.id_name == '_id' else cls.id_name)
         doc.append(',\n'.join('  unique key `%s` (%s)' % (key, ','.join('`'+one+'`' for one in val)) for key, val in uniques.items()))
     else:
-        doc.append('  primary key (`%s`)' % cls.id_name)
+        doc.append('  primary key (`%s`)' % 'id' if cls.id_name == '_id' else cls.id_name)
     doc.append(');')
     return '\n'.join(doc)
 
@@ -185,7 +185,7 @@ class ModelMetaclass(type):
         mappings = dict()
         search = {}
         has_id = False
-        cls.id_name = 'id'
+        cls.id_name = '_id'
         for k, v in attrs.iteritems():
             if isinstance(v, Field):
                 if not v.name:
@@ -193,9 +193,9 @@ class ModelMetaclass(type):
                 mappings[k] = v
                 if v.searchable:
                     search[k] = v.searchable
-            if isinstance(v, IdField) and v.primary:
-                has_id = True
-                cls.id_name = v.name
+                if v.primary:
+                    has_id = True
+                    cls.id_name = v.name
 
         if not has_id:
             attrs[cls.id_name] = IdField()
@@ -243,14 +243,13 @@ class Model(dict):
         '''
         keys = []
         args = []
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
             projection['_id'] = projection.get('_id', 1)
             projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
         else:
-            projection = cls.__mappings__.keys()
-            projection.append('id')
+            projection = ['id' if k == '_id' else k for k in cls.__mappings__.keys()]
         projection = ','.join(['`%s` as _id' % c if c == 'id' else '`%s`' % c for c in projection])
         if sort:
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
@@ -272,14 +271,13 @@ class Model(dict):
         '''
         keys = []
         args = []
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if projection:
             projection['_id'] = projection.get('_id', 1)
             projection = ['id' if k == '_id' else k for k, v in projection.items() if v == 1]
         else:
-            projection = cls.__mappings__.keys()
-            projection.append('id')
+            projection = ['id' if k == '_id' else k for k in cls.__mappings__.keys()]
         projection = ','.join(['`%s` as _id' % c if c == 'id' else '`%s`' % c for c in projection])
         if sort:
             sort = 'order by ' + ','.join(['%s %s' % (one[0], ORDER.get(one[-1], 'asc')) for one in sort])
@@ -304,7 +302,7 @@ class Model(dict):
         '''
         keys = []
         args = []
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         if where:
             where = 'where %s' % where
@@ -324,6 +322,8 @@ class Model(dict):
                         updatekeys.append(k)
 
             tid = obj.pop('tid', None)
+            if '_id' in obj:
+                obj['id'] = obj.pop('_id')
             items = obj.items()
             items.sort(lambda x,y:cmp(x[0], y[0]))
             if tid:
@@ -332,8 +332,8 @@ class Model(dict):
 
             if cls._insertsql is None or method == 'SINGLE':
                 if update:
-                    if '_id' in obj:
-                        del obj['_id']
+                    if 'id' in obj:
+                        del obj['id']
                     cls._insertsql = 'insert into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items) + ' on duplicate key update %s' % ','.join('`'+one+'`=values(`'+one+'`)' for one in updatekeys if not one == 'create_time')
                 else:
                     cls._insertsql = 'insert ignore into `%s` (%s) ' % (cls.__table__, ','.join('`'+one[0]+'`' for one in items)) + 'values (%s)' % ','.join('%s' for one in items)
@@ -369,7 +369,7 @@ class Model(dict):
             raise Exception("Wrong delete spec.")
         keys = []
         args = []
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         dbpc.handler.delete('delete from `%s` where %s' % (cls.__table__, where), [args[index][one] for index, one in enumerate(keys)])
 
@@ -391,7 +391,7 @@ class Model(dict):
             resets.append(incs)
         keys = []
         args = []
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         where = transfer(spec, grand=None, parent='', index=keys, condition=args)
         dbpc.handler.update('update `%s` set %s where %s' % (cls.__table__, ','.join(resets), where), [one[1] for one in sets] + [args[index][one] for index, one in enumerate(keys)])
 

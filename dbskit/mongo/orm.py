@@ -166,6 +166,8 @@ class ModelMetaclass(type):
         logging.info('Scan ORMapping %s...' % name)
         mappings = dict()
         search = {}
+        has_id = False
+        cls.id_name = '_id'
         for k, v in attrs.iteritems():
             if isinstance(v, Field):
                 if not v.name:
@@ -174,6 +176,15 @@ class ModelMetaclass(type):
                 mappings[k] = v
                 if v.searchable:
                     search[k] = v.searchable
+                if v.primary:
+                    has_id = True
+                    cls.id_name = v.name
+
+        if not has_id:
+            attrs[cls.id_name] = IdField()
+            attrs[cls.id_name].name = cls.id_name
+            mappings[cls.id_name] = attrs[cls.id_name]
+
         for k in mappings.iterkeys():
             attrs.pop(k)
         attrs['__mappings__'] = mappings
@@ -213,7 +224,7 @@ class Model(dict):
         Find by where clause and return one result. If multiple results found, 
         only the first one returned. If no result found, return None.
         '''
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         d = dbpc.handler.queryOne(spec, collection=cls.__table__, projection=projection, sort=sort, skip=0, limit=1)
         return d
 
@@ -222,7 +233,7 @@ class Model(dict):
         '''
         Find all and return list.
         '''
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         if limit is None:
             L = dbpc.handler.queryAll(spec, collection=cls.__table__, projection=projection, sort=sort)
         else:
@@ -234,7 +245,7 @@ class Model(dict):
         '''
         Find by 'select count(pk) from table where ... ' and return int.
         '''
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         return dbpc.handler.queryAll(spec, collection=cls.__table__).count()
 
     @classmethod
@@ -281,7 +292,7 @@ class Model(dict):
 
     @classmethod
     def delete(cls, spec):
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         dbpc.handler.delete(spec, collection=cls.__table__)
 
     @classmethod
@@ -289,7 +300,7 @@ class Model(dict):
         for k in doc:
             if not k.startswith('$'):
                 raise Exception("Wrong update doc.")
-        rectify(cls, IdField, 'IdField', spec)
+        rectify(cls, '_id', spec)
         dbpc.handler.update(spec, doc, collection=cls.__table__)
 
 
