@@ -181,7 +181,7 @@ class ModelMetaclass(type):
                     cls.id_name = v.name
 
         if not has_id:
-            attrs[cls.id_name] = IdField()
+            attrs[cls.id_name] = IdField(primary=True)
             attrs[cls.id_name].name = cls.id_name
             mappings[cls.id_name] = attrs[cls.id_name]
 
@@ -267,7 +267,7 @@ class Model(dict):
                     condition[k] = obj[k]
                 if isinstance(v, ListField):
                     doc_push[k] = {'$each':obj[k]}
-                elif k == '_id':
+                elif v.primary:
                     pass
                 else:
                     doc_set[k] = obj[k]

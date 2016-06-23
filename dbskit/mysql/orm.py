@@ -198,7 +198,7 @@ class ModelMetaclass(type):
                     cls.id_name = v.name
 
         if not has_id:
-            attrs[cls.id_name] = IdField()
+            attrs[cls.id_name] = IdField(primary=True)
             attrs[cls.id_name].name = cls.id_name
             mappings[cls.id_name] = attrs[cls.id_name]
 
@@ -320,7 +320,7 @@ class Model(dict):
                 if not hasattr(obj, k) and not isinstance(v, IdField):
                     setattr(obj, k, v.default)
                 if update:
-                    if v.updatable:
+                    if not v.primary and v.updatable:
                         updatekeys.append(k)
 
             tid = obj.pop('tid', None)
