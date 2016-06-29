@@ -35,7 +35,7 @@ def transfer(spec={}, grand=None, parent='', index=[], condition=[]):
         else:
             grand = 'id' if grand == '_id' else grand
             if operator.strip() == 'mod':
-                return '(`' + grand + '` %s' + operator + '%s)'
+                return '(`' + grand + '`' + operator + ' %s =' + '%s)'
             else:
                 return '(`' + grand + '` in (' + ','.join(['%s' for k in spec]) + '))'
 
@@ -112,6 +112,7 @@ def rectify(cls, field, spec={}, grand=None, parent=''):
 if __name__ == '__main__':
     spec = {'username':'haokuan@adesk.com', 'password':'123456', 'status':{'$ne':0}}
     spec = {'$or':[{'uid':{'$regex':'a$', '$options':'i'}}, {'a':''}]}
+    spec = {'age':{'$mod':[10, 0]}}
     index = []
     condition = []
     print transfer(spec, grand=None, parent='', index=index, condition=condition)
