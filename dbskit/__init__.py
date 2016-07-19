@@ -52,12 +52,15 @@ class Enum(object):
     def __init__(self, **kwargs):
         self.__dict__.update(**kwargs)
 
-    def __getattribute__(self, name):
-        if name.startswith('_'):
-            return object.__getattribute__(self, name)
+    def __getattribute__(self, key):
+        if key.startswith('_'):
+            return object.__getattribute__(self, key)
         def lazy_get():
-            return self.__dict__[name]
+            return self.__dict__[key]
         return lazy_get
+
+    def __setattr__(self, key, val):
+        raise Exception("AttributeError: '%s' object has no attribute '%s'" % (self.__class__.__name__, key))
 
 def singleton(cls):
     instances = {}

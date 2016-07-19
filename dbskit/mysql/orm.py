@@ -213,10 +213,8 @@ class ModelMetaclass(type):
 class Model(dict):
     __table__ = None
     __metaclass__ = ModelMetaclass
-    expire = None
     _insertsql = None
     _insertdatas = []
-    _insertstamp = time.time()
     __lock = None
 
     def __init__(self, **attributes):
@@ -355,7 +353,7 @@ class Model(dict):
             with cls.__lock:
                 if one is not None:
                     cls._insertdatas.append(one)
-                if sys.getsizeof(cls._insertdatas) > maxsize or (cls.expire and (time.time() - cls._insertstamp) > cls.expire):
+                if cls._insertdatas and sys.getsizeof(cls._insertdatas) > maxsize:
                     try:
                         dbpc.handler.insert(cls._insertsql, cls._insertdatas, method)
                         dbpc.handler.commit()
@@ -364,7 +362,6 @@ class Model(dict):
                         raise
                     finally:
                         cls._insertdatas = []
-                        cls._insertstamp = time.time()
 
     @classmethod
     def delete(cls, spec):
