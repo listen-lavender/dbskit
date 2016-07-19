@@ -59,8 +59,8 @@ class Enum(object):
             return self.__dict__[key]
         return lazy_get
 
-    def __setattr__(self, key, val):
-        raise Exception("AttributeError: '%s' object has no attribute '%s'" % (self.__class__.__name__, key))
+    # def __setattr__(self, key, val):
+    #     raise Exception("AttributeError: '%s' object has no attribute '%s'" % (self.__class__.__name__, key))
 
 def singleton(cls):
     instances = {}

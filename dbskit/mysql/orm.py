@@ -206,6 +206,8 @@ class ModelMetaclass(type):
             attrs.pop(k)
         attrs['__mappings__'] = mappings
         attrs['__search__'] = search
+        attrs['_insertsql'] = []
+        attrs['_insertdatas'] = []
         cls.genDoc = lambda cls:genDoc(cls)
         return type.__new__(cls, name, bases, attrs)
 
@@ -213,8 +215,6 @@ class ModelMetaclass(type):
 class Model(dict):
     __table__ = None
     __metaclass__ = ModelMetaclass
-    _insertsql = None
-    _insertdatas = []
     __lock = None
 
     def __init__(self, **attributes):
