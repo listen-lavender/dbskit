@@ -111,11 +111,24 @@ def rectify(cls, field, spec={}, grand=None, parent=''):
 
 if __name__ == '__main__':
     spec = {'username':'haokuan@adesk.com', 'password':'123456', 'status':{'$ne':0}}
+    index = []
+    condition = []
+    print transfer(spec, grand=None, parent='', index=index, condition=condition)
+    print condition
+    print index
+
     spec = {'$or':[{'uid':{'$regex':'a$', '$options':'i'}}, {'a':''}]}
+    index = []
+    condition = []
+    print transfer(spec, grand=None, parent='', index=index, condition=condition)
+    print condition
+    print index
+
     spec = {'age':{'$mod':[10, 0]}}
     index = []
     condition = []
     print transfer(spec, grand=None, parent='', index=index, condition=condition)
     print condition
     print index
+
     
